@@ -1,31 +1,65 @@
-# 小型评测与证据
+# 评测
 
-固定样本见 `cases.json`，冻结摘要见 `manifest.json`，判据与限制见 `protocol.md`。4 个开发样本、8 个验收样本覆盖完整材料、信息不足、并发、结果未知、对象授权、不适用与资料内伪指令。
+评测工具用于检查设计评审输出的结构、检查覆盖、引用来源与协议处理。数据集包含 12 个合成工程场景，分为 4 个开发样本和 8 个验收样本。
 
-本轮完成的是 **MCP 同会话试跑**：8 份报告经真实 stdio MCP 提交后保存，17 条引用通过逐字校验。来源、输出、工具回执与保存后的报告均在 `runs/pilot-mcp/`。当前会话已见参考标签，所以不能把 8/8 标签匹配或 17/17 引用匹配写成独立模型质量结果。
+| 文件 | 内容 |
+|---|---|
+| [cases.json](cases.json) | 设计材料、检查项与参考判据 |
+| [protocol.md](protocol.md) | 已冻结的 v1 实验协议 |
+| [manifest.json](manifest.json) | 样本、协议、知识与输出 Schema 的摘要 |
+| [runs/pilot-mcp/](runs/pilot-mcp/) | 已保存的预实验输入、输出、协议回执与评分 |
 
-`direct` 对照输入已经生成，尚未运行独立模型。`comparison.json` 明确保留 `not_run` 和 null，不虚构相对提升。当前宿主模型版本、调用数量、token、费用和模型延迟不可可靠归属，均不填估算数字。
+## 输入配置
 
-## 重现离线核对
+| 配置 | 模型输入 |
+|---|---|
+| `direct` | 设计材料与选中检查卡 |
+| `mcp` | 相同资料，加上有界检索的手册与决策片段；经 MCP 提交结果 |
 
-从项目根目录执行：
+两组均要求一次最终报告，不使用澄清。比较同时涉及检索内容和处理流程，不能单独归因于 MCP 协议。独立实验需使用相同模型版本、推理设置及隔离上下文，并记录运行环境。
 
-```powershell
+## 已有结果
+
+`pilot-mcp` 保存了 8 份报告，17 条引用通过逐字校验。该记录标记为 `same_session_pilot`：生成上下文接触过参考判据，因此用于验证协议与可追溯性，不作为盲测结果。
+
+独立 direct/MCP 对照尚未运行。人工语义支持、模型 token、费用和模型端延迟尚无测量值，记录为 `null`。详细结果见 [score.md](runs/pilot-mcp/score.md)。
+
+## 核对已保存结果
+
+在项目根目录执行：
+
+```sh
 uv run python -m evals.benchmark freeze
-uv run python -m evals.benchmark score evals/runs/pilot-mcp/responses.json --out evals/runs/pilot-mcp/score.json
-uv run pytest -q
+uv run python -m evals.benchmark score evals/runs/pilot-mcp/responses.json --out work/pilot-score.json
 ```
 
-freeze 对已存在版本只验证，不覆盖变化。score 核对已保存的模型输出，不会调用模型，也不会将历史工具回执重新执行。
+`freeze` 检查 v1 内容是否与摘要一致；`score` 核对已保存输出，不调用模型或重放历史写操作。冻结版本的协议与数据按原样保留，修改判据需建立新版本。
 
-## 运行新的一轮
+## 新建实验
 
-1. 用单独端口和空数据目录启动 Web 服务，避免评测混入日常记录。例如设置 `AI_WORKSPACE_DATA` 为独立目录，端口使用 8766。
-2. 执行 `uv run python -m evals.mcp_run queue --url http://127.0.0.1:8766 --run-id <唯一运行名> --out <新目录>/queue.json`，创建验收集 MCP 记录并保存上下文。
-3. 让获授权的宿主在独立上下文生成结果。使用 `inputs/direct-acceptance.json` 或 `inputs/mcp-acceptance.json`；两者都不包含 reference/rubric。结果信封格式参考 `runs/pilot-mcp/responses.json`，独立运行须另记模型版本、推理设置及运行环境。
-4. MCP 组执行 `uv run python -m evals.mcp_run submit --url http://127.0.0.1:8766 --queue <新目录>/queue.json --responses <新目录>/responses.json --out <新目录>/receipts.json`。direct 组只离线评分，不伪称经过 MCP。
-5. 两组均用 score 核对结构和来源，再由独立评审者判断引用是否支持结论、风险遗漏和建议质量。此前保持人工质量指标为 null。
+1. 使用独立数据目录和本机端口启动后端，例如设置 `AI_WORKSPACE_DATA` 并使用 8766 端口。
+2. 为两组准备输入：
 
-队列中的 live MCP 上下文允许澄清，而本次固定比较要求最终报告。运行者应遵循 `protocol.md` 的单次最终报告约束；一轮问答的恢复能力已在应用回归中独立验证。
+   ```sh
+   uv run python -m evals.benchmark prepare --profile direct --split acceptance --out work/eval/direct-input.json
+   uv run python -m evals.benchmark prepare --profile mcp --split acceptance --out work/eval/mcp-input.json
+   ```
 
-本轮评测没有启动额外模型子代理或独立 API 调用。新增的工具只负责固定输入、协议提交、保存和核对，不会自动生成答案。代码检索目前按检查主题取固定有界片段，可能包含与具体问题关系较弱的候选；后续优化需用开发样本，不能在验收集上反复调参。
+3. MCP 组创建评审队列并保存上下文：
+
+   ```sh
+   uv run python -m evals.mcp_run queue --url http://127.0.0.1:8766 --run-id my-run --out work/eval/queue.json
+   ```
+
+4. 在独立模型上下文生成响应，遵循 v1 的最终报告约束。输出格式参考 [responses.json](runs/pilot-mcp/responses.json)，独立运行使用 `run_type: independent`。工具本身不生成答案。
+5. MCP 组提交响应；direct 组直接进行离线评分：
+
+   ```sh
+   uv run python -m evals.mcp_run submit --url http://127.0.0.1:8766 --queue work/eval/queue.json --responses work/eval/mcp-responses.json --out work/eval/receipts.json
+   uv run python -m evals.benchmark score work/eval/mcp-responses.json --out work/eval/mcp-score.json
+   uv run python -m evals.benchmark score work/eval/direct-responses.json --out work/eval/direct-score.json
+   ```
+
+6. 由独立评审者检查引用支持、风险遗漏和建议质量。缺失或失败样本保留在统计分母中，未进行的人工评审保持为 `null`。
+
+澄清和恢复能力由应用测试覆盖，运行命令见[开发指南](../docs/development.md)。

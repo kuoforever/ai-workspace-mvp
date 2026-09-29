@@ -1,36 +1,37 @@
-# iOS 原生端验收
+# iOS 测试报告
 
-2026-09-29，在 GitHub macOS 15.7.9 / Xcode 16.4 / iPhone 16 / iOS 18.5 模拟器上完成验收，测试连接隔离的真实 FastAPI 服务。
+| 项目 | 记录 |
+|---|---|
+| 日期 | 2026-09-29 |
+| 环境 | macOS 15.7.9、Xcode 16.4、iPhone 16 / iOS 18.5 arm64 模拟器 |
+| 源码 | `cad60a4356b174c4496192685277a273f921a13a` |
+| 结果 | 构建、7 项单元测试和 2 条界面流程通过，0 失败、0 跳过 |
+| CI | [36556546790](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36556546790) |
+| 发布 | `ios-v0.3.0`；原生 Bundle 版本 `1.0 (1)` |
 
-- [构建、7 项单元测试、2 条原生界面流程](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36556546790)：源码提交 `cad60a4356b174c4496192685277a273f921a13a`，9 项通过、0 失败、0 跳过。
-- [同一提交的共享后端 CI](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36556546811)：Windows / Ubuntu 各运行 24 项自动测试，均通过。
-- [机器可读验收记录](verification.json)、[Xcode 汇总](test-summary.json)、[原始测试日志](tests.log)：包含设备、工具链、测试名称、来源提交和交付物 SHA-256。
-- [模拟器应用、原始录屏与校验文件](https://github.com/kuoforever/ai-workspace-mvp/releases/tag/ios-v0.3.0)。安装步骤见 [iOS README](../../ios/README.md)。
+## 覆盖范围
 
-应用包同时包含 arm64 / x86_64；本次实际运行的是 arm64 模拟器。编译通过不等于在 Intel 模拟器上也执行过验收。CI artifact 保留完整 `.xcresult`、构建日志及原始附件；仓库保存长期可读的摘要、测试日志和截图。
+- 新建评审，重启后恢复创建草稿与澄清回答，提交并核对服务端记录。
+- 阅读报告和来源快照，检查 Markdown 预览与分享入口。
+- 电脑端 HTTP 夹具创建评审与提交问题，手机回答后自动显示最终报告。
+- 单元测试覆盖丢失回复、原请求恢复、写入失败、409 / 503、损坏响应与损坏日志。
 
-`ios-v0.3.0` 是项目第三个交付切片的标签；此首版原生包的实际 Bundle 版本为 `1.0 (1)`，已从构建产物读取并记入验收 JSON。
+界面测试连接隔离的 FastAPI 服务，使用模拟数据和协议夹具。应用包包含 arm64 / x86_64，本次运行测试的是 arm64。真机签名、外部分享接收方和远程认证未纳入测试。
 
-## 覆盖的流程
+## 文件
 
-第一条界面流程由手机新建评审，关闭进程再打开后恢复创建草稿；在模拟澄清中填写答案，再次重启后恢复回答，提交并核对服务端唯一记录，随后查看报告、引用原文和 Markdown 分享入口。第二条通过 HTTP 夹具模拟电脑创建和助手澄清，在手机回答，电脑夹具提交报告后手机自动更新。
+[验证摘要](verification.json) · [Xcode 汇总](test-summary.json) · [测试日志](tests.log) · [模拟器应用与录屏](https://github.com/kuoforever/ai-workspace-mvp/releases/tag/ios-v0.3.0)
 
-单元测试验证丢失回复后的磁盘恢复及原请求重试、拒绝替换未确认请求、写盘失败不发送网络、409 与 503 差异、损坏响应、回执清理失败和损坏日志拒绝启动。
+完整 `.xcresult`、构建日志和附件保存在对应 CI artifact 中。安装方法见 [iOS README](../../ios/README.md)。原始录屏约 5:48，包含测试准备等待，可从约 3:50 查看界面操作；无讲解音轨。
 
-这两条界面流程没有调用模型；不作为模型质量、真实用户使用或跨端性能基准。分享入口已检查，未向外部收件人发送内容。尚未完成 iPhone 真机、远程认证、IPA 签名、TestFlight 或 App Store 发布。
-
-## 实际模拟器画面
-
-以下是 XCTest 保存的原始截图，未编辑画面内容。
+## 截图
 
 | 澄清回答 | 完成报告 |
 |---|---|
-| ![澄清](01-clarification.png) | ![模拟报告](02-report.png) |
+| ![澄清](01-clarification.png) | ![报告](02-report.png) |
 
 | 引用依据 | 导出预览 |
 |---|---|
-| ![来源快照](03-source.png) | ![分享入口](04-export.png) |
+| ![来源](03-source.png) | ![导出](04-export.png) |
 
-![电脑创建、手机回答、电脑提交后的同任务接续](05-cross-device.png)
-
-原始录屏长约 5 分 48 秒，已完整解码检查；前段包含测试环境准备等待，可从约 3:50 查看界面操作。录屏没有讲解音轨，界面中的模拟与协议夹具标签保持可见。早期图标生成失败已修复，旧版本的重复运行已取消；以上链接只引用最新通过的完整验收。
+![跨端接续](05-cross-device.png)

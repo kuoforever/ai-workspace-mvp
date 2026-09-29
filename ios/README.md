@@ -1,19 +1,21 @@
-# iOS 原生客户端
+# iOS
 
-SwiftUI + URLSession + Codable，最低 iOS 17，无第三方运行时依赖。与 Web、Android 共用 FastAPI / SQLite / MCP 工作流，支持评审列表、新建、检查项选择、澄清回答、引用快照和原生分享。
+SwiftUI / URLSession 客户端，最低支持 iOS 17。通过共享 API 提供评审列表、创建、澄清回答、引用查看和报告分享。
 
-草稿与回答随编辑原子保存；提交前落盘请求键和原始请求体。连接中断、服务端 5xx 或无效响应保留原提交，重启后由用户重试。4xx 明确拒绝后可刷新再提交。文件损坏时停止写入，不静默丢弃请求记录。当前不承诺设备断电后的持久化保证。
+## 环境
 
-## Mac 本机运行
+需要 Mac、Xcode、iOS 模拟器、XcodeGen 和 uv。CI 使用 Xcode 16.4、XcodeGen 2.46.0 和 iOS 18.5。
 
-需要 Xcode（CI 固定 16.4）、已安装的 iOS 模拟器、XcodeGen 和 uv。在仓库根目录：
+## 运行
+
+在仓库根目录启动后端：
 
 ```sh
 uv sync --frozen --python 3.12
-uv run uvicorn app.api:app --host 127.0.0.1 --port 8765
+uv run --no-sync uvicorn app.api:app --host 127.0.0.1 --port 8765
 ```
 
-在另一个终端生成项目并打开：
+在另一个终端生成并打开 Xcode 项目：
 
 ```sh
 brew install xcodegen
@@ -21,23 +23,31 @@ bash ios/generate.sh
 open ios/AIWorkspace.xcodeproj
 ```
 
-选择 AIWorkspace scheme 和 iPhone 模拟器运行。客户端固定连接 `http://localhost:8765/api`，模拟器使用 Mac 的本机网络；服务继续只监听回环地址。ATS 仅为本机连接放行，HTTP 重定向被拒绝。
+选择 `AIWorkspace` scheme 和 iPhone 模拟器运行。客户端连接 `http://localhost:8765/api`，后端需运行在同一台 Mac。
 
-也可使用 CI 输出的预编译 `AIWorkspace-simulator.app.zip`，在 Mac 解压，启动一个 iPhone 模拟器后安装（后端仍需启动）：
+也可下载[预编译模拟器应用](https://github.com/kuoforever/ai-workspace-mvp/releases/tag/ios-v0.3.0)，解压并启动模拟器后安装：
 
 ```sh
 xcrun simctl install booted AIWorkspace.app
 xcrun simctl launch booted io.github.kuoforever.aiworkspace.ios
 ```
 
-应用包中的实际架构由 CI 的 `architectures.txt` 记录。Windows 无法运行 iOS 模拟器，可以查看同一测试产出的截图与录屏。
+应用包包含 arm64 / x86_64。它是模拟器应用，不是可安装到 iPhone 的 IPA。真机连接和签名尚未支持；真机上的 localhost 指向手机自身。
 
-选择“离线模拟”可不接模型演示；选择“助手评审”后，在同一台 Mac 上将 `swe-workspace` MCP 接入桌面助手，按根目录 README 操作。iOS 端不托管模型，也不保存模型密钥。
+## 状态管理
 
-## 自动验证与交付范围
+MainActor 状态对象管理交互，Codable 文件以原子替换保存草稿、回答和待确认请求。网络结果未知时保留原请求，由用户重试。前台等待助手时轮询结果。
 
-`.github/workflows/ios.yml` 在 macOS 15 / Xcode 16.4 / iPhone 16 / iOS 18.5 上执行。单元测试覆盖请求丢失回复后的恢复、请求替换拒绝、磁盘写入失败、4xx/5xx、损坏响应及损坏日志；两条 UI 流程覆盖草稿/回答重启恢复、报告/来源/分享入口，以及电脑创建到手机继续的 MCP 协议流程。MCP 测试使用显式夹具，不代表真实模型质量。
+评审方式见[使用指南](../docs/usage.md)，数据与恢复规则见[架构设计](../docs/architecture.md#移动端恢复)。
 
-运行 `bash scripts/ios-simulator-check.sh` 前先启动后端。脚本输出测试结果、截图、录屏和 `AIWorkspace-simulator.app.zip`；实际构建和验证结果以 CI 及仓库证据为准。
+## 测试
 
-交付物是 **iOS Simulator 应用**。不含 iPhone 真机签名、IPA、TestFlight 或 App Store 发布。真机的 localhost 属于手机自身，不能直接访问 Mac；真机连接方式和签名留作后续独立任务。
+在仓库根目录执行，后端须已启动，且 Xcode 中已安装 iOS 18.5 的 iPhone 16 模拟器：
+
+```sh
+bash scripts/ios-simulator-check.sh
+```
+
+脚本执行 XCTest 和 XCUITest，输出模拟器应用、`.xcresult`、截图和录屏到 `ios-evidence/`。测试覆盖提交恢复、原生评审流程、草稿与回答重启恢复，以及跨端接续。
+
+[测试结果与截图](../evidence/ios/README.md) · [来源与依赖](../ATTRIBUTION.md)
