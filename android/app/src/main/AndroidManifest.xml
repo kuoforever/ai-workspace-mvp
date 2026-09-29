@@ -1,6 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <application android:label="AI Workspace" android:allowBackup="false"
+        android:icon="@drawable/ic_workspace" android:dataExtractionRules="@xml/data_extraction_rules"
         android:supportsRtl="true" android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:networkSecurityConfig="@xml/network_security_config">
         <activity android:name=".MainActivity" android:exported="true">

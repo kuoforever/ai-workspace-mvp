@@ -4,6 +4,7 @@ import android.content.ContentValues
 import android.graphics.Bitmap
 import android.os.Build
 import android.provider.MediaStore
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -37,8 +38,10 @@ class WorkspaceFlowTest {
 
     private fun shot(name: String) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
-        instrumentation.waitForIdleSync()
-        val bitmap = instrumentation.uiAutomation.takeScreenshot()
+        // Capture the rendered Compose frame after its semantics assertion, rather
+        // than a possibly older system compositor frame.
+        compose.waitForIdle()
+        val bitmap = compose.onRoot().captureToImage().asAndroidBitmap()
         // AGP removes the test application after a connected run. Keep evidence in
         // MediaStore so uninstalling the app does not erase the captured frames.
         check(Build.VERSION.SDK_INT >= 29)
@@ -92,8 +95,9 @@ class WorkspaceFlowTest {
     @Test fun desktopCreatedMcpReviewCanBeContinuedOnAndroid() = runBlocking {
         ready()
         val key = UUID.randomUUID().toString()
+        val title = "跨端协议验收 ${key.take(8)}"
         val created = wireJson.decodeFromString<ReviewSnapshot>(api.request("/reviews", wireJson.encodeToString(ReviewInput(
-            title = "跨端协议验收 $key", design = "订单请求使用请求键去重，错误恢复细节尚未确定。",
+            title = title, design = "订单请求使用请求键去重，错误恢复细节尚未确定。",
             mode = "mcp", checkIds = listOf("CON-01"), recordId = "desktop-fixture",
         )), "$key-create"))
         val context = wireJson.parseToJsonElement(api.request("/reviews/${created.id}/context")).jsonObject
@@ -108,8 +112,8 @@ class WorkspaceFlowTest {
         }
         api.request("/reviews/${created.id}/model-output", questions.toString(), "$key-question")
         compose.onNodeWithText("刷新").performClick()
-        waitText("跨端协议验收 $key")
-        compose.onNodeWithText("跨端协议验收 $key").performClick()
+        waitText(title)
+        compose.onNodeWithText(title).performClick()
         waitText("幂等键保留多久？")
         compose.onNodeWithTag("answer:cross-device").performTextInput("保留七天，超过有效期需重新核对业务意图。")
         scrollClick("detail-list", "answer-submit")
@@ -135,6 +139,7 @@ class WorkspaceFlowTest {
         }
         api.request("/reviews/${created.id}/model-output", output.toString(), "$key-report")
         waitText("跨端协议夹具已完成")
+        compose.onNodeWithTag("status").assertTextEquals("已完成")
         shot("05-cross-device")
     }
 }
