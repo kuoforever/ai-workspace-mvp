@@ -1,0 +1,53 @@
+name: iOS
+
+on:
+  push:
+    paths: ["ios/**", "app/**", "knowledge/**", "scripts/ios-simulator-check.sh", ".github/workflows/ios.yml", "uv.lock"]
+  pull_request:
+    paths: ["ios/**", "app/**", "knowledge/**", "scripts/ios-simulator-check.sh", ".github/workflows/ios.yml", "uv.lock"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.12.5"
+          enable-cache: true
+      - name: Prepare Xcode project generator and isolated backend
+        run: |
+          brew install xcodegen
+          uv sync --frozen --python 3.12
+          AI_WORKSPACE_DATA="$RUNNER_TEMP/ios-data" .venv/bin/python -m uvicorn app.api:app --host 127.0.0.1 --port 8765 >"$RUNNER_TEMP/ios-api.log" 2>&1 &
+          echo "$!" >"$RUNNER_TEMP/ios-api.pid"
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:8765/api/config; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://localhost:8765/api/config
+      - name: Build, unit tests and native simulator flows
+        run: bash scripts/ios-simulator-check.sh
+      - name: Upload simulator application and test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ios-simulator-and-evidence
+          retention-days: 14
+          path: |
+            ios-evidence/
+            ${{ runner.temp }}/ios-api.log
+      - name: Stop isolated backend before cache cleanup
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ios-api.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/ios-api.pid")" || true
+          fi

@@ -17,3 +17,10 @@ dist/
 local.properties
 *.apk
 .idea/
+ios/*.xcodeproj/
+ios/App/Info.plist
+ios/Tests/Info.plist
+ios/UITests/Info.plist
+ios/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png
+ios-evidence/
+*.xcresult/
