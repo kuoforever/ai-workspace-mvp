@@ -36,6 +36,9 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources: [Tests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.kuoforever.aiworkspace.ios.tests
     dependencies:
       - target: AIWorkspace
     info:
@@ -44,6 +47,9 @@ targets:
     type: bundle.ui-testing
     platform: iOS
     sources: [UITests]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.kuoforever.aiworkspace.ios.uitests
     dependencies:
       - target: AIWorkspace
     info:

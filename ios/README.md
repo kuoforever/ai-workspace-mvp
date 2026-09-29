@@ -23,6 +23,15 @@ open ios/AIWorkspace.xcodeproj
 
 选择 AIWorkspace scheme 和 iPhone 模拟器运行。客户端固定连接 `http://localhost:8765/api`，模拟器使用 Mac 的本机网络；服务继续只监听回环地址。ATS 仅为本机连接放行，HTTP 重定向被拒绝。
 
+也可使用 CI 输出的预编译 `AIWorkspace-simulator.app.zip`，在 Mac 解压，启动一个 iPhone 模拟器后安装（后端仍需启动）：
+
+```sh
+xcrun simctl install booted AIWorkspace.app
+xcrun simctl launch booted io.github.kuoforever.aiworkspace.ios
+```
+
+应用包中的实际架构由 CI 的 `architectures.txt` 记录。Windows 无法运行 iOS 模拟器，可以查看同一测试产出的截图与录屏。
+
 选择“离线模拟”可不接模型演示；选择“助手评审”后，在同一台 Mac 上将 `swe-workspace` MCP 接入桌面助手，按根目录 README 操作。iOS 端不托管模型，也不保存模型密钥。
 
 ## 自动验证与交付范围
