@@ -1,11 +1,13 @@
 package io.github.kuoforever.aiworkspace
 
+import android.content.ContentValues
 import android.graphics.Bitmap
+import android.os.Build
+import android.provider.MediaStore
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
@@ -36,9 +38,17 @@ class WorkspaceFlowTest {
     private fun shot(name: String) {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.waitForIdleSync()
-        val directory = File(instrumentation.targetContext.getExternalFilesDir(null), "screenshots").apply { mkdirs() }
         val bitmap = instrumentation.uiAutomation.takeScreenshot()
-        File(directory, "$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        // AGP removes the test application after a connected run. Keep evidence in
+        // MediaStore so uninstalling the app does not erase the captured frames.
+        check(Build.VERSION.SDK_INT >= 29)
+        val resolver = instrumentation.targetContext.contentResolver
+        val uri = requireNotNull(resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, ContentValues().apply {
+            put(MediaStore.Images.Media.DISPLAY_NAME, "$name.png")
+            put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+            put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/ai-workspace-evidence")
+        }))
+        requireNotNull(resolver.openOutputStream(uri)).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
     }
 
