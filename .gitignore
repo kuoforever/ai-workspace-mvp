@@ -12,3 +12,8 @@ __pycache__/
 *.sqlite3-shm
 work/
 dist/
+.gradle/
+**/build/
+local.properties
+*.apk
+.idea/

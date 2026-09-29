@@ -1,0 +1,64 @@
+name: Android
+
+on:
+  push:
+    paths: ["android/**", "app/**", "knowledge/**", "scripts/android-emulator-check.sh", ".github/workflows/android.yml", "uv.lock"]
+  pull_request:
+    paths: ["android/**", "app/**", "knowledge/**", "scripts/android-emulator-check.sh", ".github/workflows/android.yml", "uv.lock"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.12.5"
+          enable-cache: true
+      - name: Install backend and start isolated service
+        run: |
+          uv sync --frozen --python 3.12
+          AI_WORKSPACE_DATA="$RUNNER_TEMP/android-data" uv run --no-sync uvicorn app.api:app --host 127.0.0.1 --port 8765 >"$RUNNER_TEMP/android-api.log" 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8765/api/config; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:8765/api/config
+      - name: Build, unit tests and Android Lint
+        run: bash android/gradlew -p android :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:lintDebug --no-daemon --stacktrace
+      - name: Enable emulator acceleration
+        run: sudo chmod 666 /dev/kvm
+      - name: Native integration on Android 15
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash scripts/android-emulator-check.sh
+      - name: Upload APK, reports and recorded test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: android-debug-and-evidence
+          retention-days: 14
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+            android/app/build/reports/
+            android/app/build/outputs/androidTest-results/
+            android-evidence/
+            ${{ runner.temp }}/android-api.log
