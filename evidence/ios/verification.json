@@ -1,0 +1,124 @@
+{
+  "recorded_at": "2026-09-29T10:51:57.749352+00:00",
+  "tested_commit": "cad60a4356b174c4496192685277a273f921a13a",
+  "ci_run": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36556546790",
+  "ci_conclusion": "success",
+  "environment": {
+    "runner": "macos-15",
+    "description": "AIWorkspace · Built with macOS 15.7.9",
+    "device": {
+      "architecture": "arm64",
+      "deviceId": "F0E646EF-4792-4F36-B48B-EC89B3A6B73B",
+      "deviceName": "iPhone 16",
+      "modelName": "iPhone 16",
+      "osBuildNumber": "22F77",
+      "osVersion": "18.5",
+      "platform": "iOS Simulator"
+    },
+    "xcode": "Xcode 16.4\nBuild version 16F6",
+    "xcodegen": "Version: 2.46.0"
+  },
+  "unit_tests": {
+    "passed": 7,
+    "failed": 0,
+    "cases": [
+      "testCannotReplaceAnUnconfirmedRequest",
+      "testClearFailureRetainsCommandForReplay",
+      "testConflictClearsCommandButServerFailureKeepsIt",
+      "testCorruptJournalDoesNotBecomeAnEmptyJournal",
+      "testFailedLocalWriteNeverReachesNetwork",
+      "testInvalidSuccessBodyKeepsTheRetryIdentity",
+      "testLostReplyReloadsTheExactCommandFromDisk"
+    ]
+  },
+  "ui_tests": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "cases": [
+      "testDesktopCreatedMCPReviewContinuesOnPhone",
+      "testNativeCreateRestoreClarifyReadSourceAndExport"
+    ]
+  },
+  "application": {
+    "file": "ai-workspace-ios-v0.3.0-simulator.app.zip",
+    "sha256": "b1031a6ce91ee30e107437e13bd8d3100cc9e9a1894ffc53947f826b1ac2e8b6",
+    "bytes": 5869491,
+    "build": "Debug iOS Simulator application",
+    "architectures": [
+      "x86_64",
+      "arm64"
+    ],
+    "bundle_identifier": "io.github.kuoforever.aiworkspace.ios",
+    "minimum_os": "17.0",
+    "bundle_version": "1.0",
+    "bundle_build": "1"
+  },
+  "recording": {
+    "file": "ai-workspace-ios-demo.mp4",
+    "sha256": "1c62d3323569dee1f55e06c2ed6e4f9b62b9a16e60ef74de805a0f6df756f505",
+    "bytes": 25147068,
+    "description": "Unedited simulator test recording, including preparation waits; no narration or model inference.",
+    "decode_verification": {
+      "duration_seconds": 348.106667,
+      "width": 1178,
+      "height": 2556,
+      "codec": "h264",
+      "decoded_frames": 1130
+    }
+  },
+  "screenshots": [
+    {
+      "file": "01-clarification.png",
+      "sha256": "76b376f65f690518be27c97f73f3ab0c8c6ec7506c9cb18538c3751b4ead573f",
+      "test": "WorkspaceFlowTests/testNativeCreateRestoreClarifyReadSourceAndExport()",
+      "original_attachment": "E5BE6341-A497-435B-82D5-31DA39A15EA7.png"
+    },
+    {
+      "file": "02-report.png",
+      "sha256": "b0fddb48ded1f28d286b80694d8cf0ccdc25bf80dc05e807bd8eb9cae2137056",
+      "test": "WorkspaceFlowTests/testNativeCreateRestoreClarifyReadSourceAndExport()",
+      "original_attachment": "3C794E9B-5003-46B4-86E8-9D2BBD90520C.png"
+    },
+    {
+      "file": "03-source.png",
+      "sha256": "4200fb545fedcde6b12c38920845fa36ea6f2764912f423f3d413316f9d3932d",
+      "test": "WorkspaceFlowTests/testNativeCreateRestoreClarifyReadSourceAndExport()",
+      "original_attachment": "676051A2-3E04-4A6A-8802-2EFD67127E87.png"
+    },
+    {
+      "file": "04-export.png",
+      "sha256": "544e903c9ce803e18902559db44dbcfb9583940a63fbf52e8c52f9fc6a3266bc",
+      "test": "WorkspaceFlowTests/testNativeCreateRestoreClarifyReadSourceAndExport()",
+      "original_attachment": "058E663E-B893-4EA2-8B71-D048D7EDA204.png"
+    },
+    {
+      "file": "05-cross-device.png",
+      "sha256": "aaeaecc877dfd9cc817e7ff9502b5a3933b0cc1030193a2b5bb9bb59d5a741b7",
+      "test": "WorkspaceFlowTests/testDesktopCreatedMCPReviewContinuesOnPhone()",
+      "original_attachment": "0AE195D7-EED9-4480-9791-96C3CC2EE6D5.png"
+    }
+  ],
+  "artifact": {
+    "id": 11027709726,
+    "sha256": "eba5e15837b0bd8940d9b4fcfc6711985208a34f14e6bf96fe98351c45959786",
+    "name": "ios-simulator-and-evidence"
+  },
+  "backend_ci": {
+    "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36556546811",
+    "platforms": [
+      "Windows",
+      "Ubuntu"
+    ],
+    "tests_per_platform": 24,
+    "conclusion": "success"
+  },
+  "boundaries": [
+    "UI flows use scripted and HTTP protocol fixtures, not model inference.",
+    "arm64 simulator execution verified; x86_64 was compiled but not separately executed.",
+    "No physical iPhone acceptance, IPA, TestFlight, or App Store distribution.",
+    "Same-Mac loopback connection only; no remote authentication or cloud sync.",
+    "Export preview and share entry are checked; external sharing recipients are not exercised.",
+    "Process relaunch and atomic file recovery checked; power-loss durability is not guaranteed."
+  ]
+}

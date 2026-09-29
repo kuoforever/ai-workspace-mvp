@@ -6,7 +6,7 @@
 
 > 建立 12 个固定工程场景和可复现评测工具；在 8 个验收场景完成 MCP 流程试跑，保存 8 份报告及协议回执，17 条引用通过逐字校验。该试跑用于验证流程与可追溯性，独立模型质量对照待完成。
 
-如果简历只放一条，保留第一段，将自动化测试数作为工程验证证据即可。不要使用“模型准确率 100%”“显著优于 ChatGPT”“已支持原生三端”或“生产部署”等当前证据不支持的表述。
+如果简历只放一条，保留第一段，将自动化测试数作为工程验证证据即可。不要使用“模型准确率 100%”“显著优于 ChatGPT”“多端已上架”或“生产部署”等当前证据不支持的表述。
 
 ## 两分钟演示
 
@@ -32,4 +32,12 @@ Android 岗位可补充原生实现：
 
 > 使用 Kotlin、Jetpack Compose 和 ViewModel 开发 Android 原生评审客户端，与 Web 共用 FastAPI 接口；实现设备草稿、引用快照、系统分享和 AtomicFile 提交日志，网络结果未知时以原请求键重试，支持电脑创建、手机补充、电脑继续评审的同任务接续；通过 5 项单元测试及 2 条 Android 15 模拟器流程验收。
 
-验证指标分别报告：后端 24 项自动测试；Android 5 项单元测试和 2 条 API 35 模拟器流程。APK、真实截图、测试录屏及对应提交见 [Android 验收证据](evidence/android/README.md)。设备流程使用模拟／协议夹具，不能当作模型质量样本。尚未进行实体手机验收，iOS 原生端也未实现。
+验证指标分别报告：后端 24 项自动测试；Android 5 项单元测试和 2 条 API 35 模拟器流程。APK、真实截图、测试录屏及对应提交见 [Android 验收证据](evidence/android/README.md)。设备流程使用模拟／协议夹具，不能当作模型质量样本。尚未进行实体手机验收。
+
+## iOS 岗位表述
+
+> 使用 SwiftUI、URLSession 和 Codable 开发 iOS 原生评审客户端，复用 Web / Android 的 FastAPI 与 MCP 工作流；实现设备草稿、澄清回答恢复、来源快照和系统分享，以原子提交日志保留请求键及正文，支持未知网络结果重试和同任务跨端接续；通过 7 项 XCTest 单元测试和 2 条 iOS 18.5 模拟器界面流程验收。
+
+iOS 模拟器包、原始截图、录屏与对应提交见 [iOS 验收证据](evidence/ios/README.md)。包包含 arm64 / x86_64，本次实际执行验收的是 arm64。当前交付范围为 Mac 上的 iOS Simulator 应用；未包含 iPhone 真机签名、TestFlight、App Store 或云端用户系统。
+
+按岗位选取项目重点：AI 应用突出 MCP、状态和引用校验；全栈突出共享 API、持久化与 Web；Android 突出 Compose / ViewModel / AtomicFile；iOS 突出 SwiftUI / MainActor / URLSession / XCTest。每项能力使用对应的验收记录，不将移动协议测试写成模型效果。

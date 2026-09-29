@@ -6,6 +6,7 @@
 flowchart LR
     Web[Web 工作台] --> API[FastAPI / 单进程]
     Android[Android / Kotlin Compose] -->|ADB 本机转发| API
+    iOS[iOS / SwiftUI] -->|Mac 模拟器 localhost| API
     Host[宿主助手与模型] <--> MCP[stdio MCP 适配器]
     MCP <--> API
     API --> Graph[LangGraph 固定评审流程]
@@ -14,7 +15,7 @@ flowchart LR
     Graph --> Validate[结构 / 引用 / 版本校验]
 ```
 
-MCP 适配器没有第二份数据库，也不运行自主模型循环。Web、Android 和 MCP 经同一个服务写入；桌面宿主提供推理，客户端提交后需要在助手中触发处理。
+MCP 适配器没有第二份数据库，也不运行自主模型循环。Web、Android、iOS 和 MCP 经同一个服务写入；桌面宿主提供推理，客户端提交后需要在助手中触发处理。
 
 ## 状态和写入契约
 
@@ -48,6 +49,8 @@ stateDiagram-v2
 
 Android 原生客户端已按共享 API 实现，设备保存草稿和不可变待确认请求。提交前持久化请求键，未知结果沿用原正文重试；收到明确版本冲突时保留草稿、提示刷新。仅通过 ADB 连接本机服务，未放开后端网络绑定。详见 [Android 客户端](../android/README.md)。
 
-iOS 尚未实现。远程部署需要补认证、用户隔离和多实例数据层；独立 Web 自动推理需要另接模型提供方。这些不属于当前交付的运行能力。
+iOS 采用 SwiftUI / MainActor 状态和 URLSession，共用相同版本与幂等协议。Codable 文件以原子替换保存草稿、回答及不可变提交日志；未知回复、5xx、损坏响应保留原请求，日志损坏时暂停写入。仅在前台等待助手时轮询，编辑回答和连接错误时不自动刷新。Mac 模拟器通过 localhost 连接同机服务；实现与验收方式见 [iOS 客户端](../ios/README.md)。
+
+远程部署需要补认证、用户隔离和多实例数据层；独立 Web 自动推理需要另接模型提供方。这些不属于当前交付的运行能力。
 
 实现入口：[`api.py`](../app/api.py)、[`review_service.py`](../app/review_service.py)、[`knowledge.py`](../app/knowledge.py)、[`mcp_server.py`](../app/mcp_server.py)。实际 HTTP 合约由 `/openapi.json` 生成，快照位于 [`evidence/openapi.json`](../evidence/openapi.json)。

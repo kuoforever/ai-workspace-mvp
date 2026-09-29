@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/ci.yml/badge.svg)](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/ci.yml)
 [![Android](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/android.yml/badge.svg)](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/android.yml)
+[![iOS](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/ios.yml/badge.svg)](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/ios.yml)
 
-复用现有工程工作台，给设计评审增加一条可恢复、有来源的 AI 流程。Web 与 Kotlin / Compose Android 原生客户端共用 API；MCP 连接电脑宿主助手。
+复用现有工程工作台，给设计评审增加一条可恢复、有来源的 AI 流程。Web、Kotlin / Compose Android 和 SwiftUI iOS 原生客户端共用 API；MCP 连接电脑宿主助手。
 
 ![带来源引用的评审报告；此画面为明确标记的已保存报告回放](evidence/demo-replay.png)
 
@@ -38,6 +39,16 @@ MCP 是资料和工具协议，模型由 Codex 等宿主提供。网页不会自
 设备保留草稿与最近报告；提交前用 AtomicFile 保存请求正文和幂等键，结果未知时显式重试同一请求。当前是 USB／模拟器的本机开发路径，尚无互联网账号和云端同步。Android CI 构建 Debug APK，运行 5 项单元测试和 2 条 Android 15 模拟器流程，并保存截图与录屏。具体结果见 [Android Actions](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/android.yml)。
 
 [下载 Android 预览版与录屏](https://github.com/kuoforever/ai-workspace-mvp/releases/tag/android-v0.2.0) · [截图、通过记录与校验摘要](evidence/android/README.md)。APK 为开发调试签名，使用前需要电脑服务和 ADB 转发。
+
+## iOS 原生端
+
+[`ios/`](ios/README.md) 使用 SwiftUI、URLSession 和 Codable，实现新建评审、选择检查项、草稿与回答恢复、来源快照和系统分享。先在 Mac 启动共享后端，再运行 iOS 模拟器；客户端通过 `localhost:8765` 访问同一台 Mac。
+
+提交前保存原始正文及幂等键，未知结果可在重新启动后重试原请求。macOS CI 已构建 arm64 / x86_64 模拟器应用，并在 iOS 18.5 arm64 模拟器通过 7 项单元测试和 2 条 XCUITest 流程。
+
+[下载 iOS 模拟器版与录屏](https://github.com/kuoforever/ai-workspace-mvp/releases/tag/ios-v0.3.0) · [截图、验收记录与校验摘要](evidence/ios/README.md)。
+
+当前交付范围为模拟器应用，真机签名、IPA、TestFlight 和 App Store 尚未交付。iPhone 上的 localhost 指向手机自身，真机连接仍需后续开发。
 
 ## 当前切片
 
@@ -83,6 +94,6 @@ GitHub Actions 在 Windows / Ubuntu 的 Python 3.12 环境运行锁定安装、L
 
 [评测说明](evals/README.md) 包含 12 个冻结场景、两种输入配置和可重现工具。当前 MCP 同会话试跑已保存 8 份验收样本报告，17 条引用逐字匹配；这不是独立模型质量对照。应用及评测回归包含 24 项测试，最新安装验证见 [release-check.json](evidence/release-check.json)。
 
-[简历表述与演示提纲](PORTFOLIO.md) 已整理，可按 AI 应用、全栈或 Android 岗位选用。完整模型输出、协议回执和分项结果见 `evals/runs/pilot-mcp/`。
+[简历表述与演示提纲](PORTFOLIO.md) 已整理，可按 AI 应用、全栈或移动端岗位选用。完整模型输出、协议回执和分项结果见 `evals/runs/pilot-mcp/`。
 
-仍待交付：独立上下文的 direct/MCP 对照及人工语义评审、独立模型自动调用、云端账号与部署、iOS 原生客户端和实体手机验收。当前可展示的是本机 Web + Android + MCP 应用，不能写成已上线多端产品。
+仍待交付：独立上下文的 direct/MCP 对照及人工语义评审、独立模型自动调用、云端账号与部署和实体手机验收。当前是本机 Web、移动原生客户端与 MCP 的共享工作流，不能写成已上线多端产品。

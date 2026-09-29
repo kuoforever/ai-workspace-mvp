@@ -2,6 +2,8 @@
 
 2026-09-29，在 Ubuntu GitHub Actions 上构建 APK，并连接隔离的真实 FastAPI 服务完成 Android 15（API 35、x86_64、Pixel 6 配置）模拟器验收。
 
+本页与 JSON 保留当时 Android 交付的范围；后续完成的 iOS 验收单独见 [iOS 证据](../ios/README.md)。
+
 - [构建、5 项单元测试、Lint 与 2 条模拟器流程](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36549563579)：测试源码提交 `538aa3ca25b791eeda16bdbbff5c46e71b488d66`。
 - [共享后端 Windows / Ubuntu CI](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36549563596)：同一提交，每个平台 24 项自动化测试。
 - [机器可读验收记录](verification.json)：构建提交、运行环境、测试数量、APK 与录屏 SHA-256。
