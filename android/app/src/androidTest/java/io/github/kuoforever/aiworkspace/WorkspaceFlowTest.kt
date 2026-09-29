@@ -92,7 +92,7 @@ class WorkspaceFlowTest {
         }
     }
 
-    @Test fun recordedModelReviewCanBeContinuedOnAndroid() = runBlocking {
+    @Test fun recordedModelReviewCanBeContinuedOnAndroid() = runBlocking<Unit> {
         ready()
         compose.onNodeWithTag("check-connection").performClick()
         ready()
