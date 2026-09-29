@@ -1,8 +1,9 @@
 # AI Workspace · SWE 评审 MVP
 
 [![CI](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/ci.yml/badge.svg)](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/ci.yml)
+[![Android](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/android.yml/badge.svg)](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/android.yml)
 
-复用现有工程工作台，给设计评审增加一条可恢复、有来源的 AI 流程。Web 是首个客户端；MCP 连接宿主助手，后续原生 Android / iOS 共用 API。
+复用现有工程工作台，给设计评审增加一条可恢复、有来源的 AI 流程。Web 与 Kotlin / Compose Android 原生客户端共用 API；MCP 连接电脑宿主助手。
 
 ![带来源引用的评审报告；此画面为明确标记的已保存报告回放](evidence/demo-replay.png)
 
@@ -29,6 +30,14 @@ stdio 命令：`uv --directory <本项目绝对路径> run --frozen --no-sync py
 MCP 工具：`get_check_catalog`、`start_review`、`list_pending_reviews`、`get_review_context`、`submit_review_output`。默认连接本机 `http://127.0.0.1:8765`，可通过 `AI_WORKSPACE_URL` 修改本机端口。
 
 MCP 是资料和工具协议，模型由 Codex 等宿主提供。网页不会自动唤起聊天，本服务也没有独立模型 API 调用。宿主调用次数、token 和费用不可观测，保存为 `null`；三次上限约束的是向本服务提交结果的次数。没有使用 MCP sampling，也不假定宿主支持后台推理。本地 stdio 连接已设计用于桌面助手，ChatGPT 网页的远程连接需要另行部署和认证。
+
+## Android 原生端
+
+[`android/`](android/README.md) 提供原生任务列表、创建设计、澄清回答、引用快照与 Markdown 分享。手机通过 `adb reverse tcp:8765 tcp:8765` 连接电脑现有服务；电脑创建的评审可在手机继续。
+
+设备保留草稿与最近报告；提交前用 AtomicFile 保存请求正文和幂等键，结果未知时显式重试同一请求。当前是 USB／模拟器的本机开发路径，尚无互联网账号和云端同步。Android CI 构建 Debug APK，运行 5 项单元测试和 2 条 Android 15 模拟器流程，并保存截图与录屏。具体结果见 [Android Actions](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/android.yml)。
+
+[下载 Android 预览版与录屏](https://github.com/kuoforever/ai-workspace-mvp/releases/tag/android-v0.2.0) · [截图、通过记录与校验摘要](evidence/android/README.md)。APK 为开发调试签名，使用前需要电脑服务和 ADB 转发。
 
 ## 当前切片
 
@@ -74,6 +83,6 @@ GitHub Actions 在 Windows / Ubuntu 的 Python 3.12 环境运行锁定安装、L
 
 [评测说明](evals/README.md) 包含 12 个冻结场景、两种输入配置和可重现工具。当前 MCP 同会话试跑已保存 8 份验收样本报告，17 条引用逐字匹配；这不是独立模型质量对照。应用及评测回归包含 24 项测试，最新安装验证见 [release-check.json](evidence/release-check.json)。
 
-[简历表述与演示提纲](PORTFOLIO.md) 已整理，可按 AI 应用或全栈岗位选用。完整模型输出、协议回执和分项结果见 `evals/runs/pilot-mcp/`。
+[简历表述与演示提纲](PORTFOLIO.md) 已整理，可按 AI 应用、全栈或 Android 岗位选用。完整模型输出、协议回执和分项结果见 `evals/runs/pilot-mcp/`。
 
-仍待交付：独立上下文的 direct/MCP 对照及人工语义评审、独立模型自动调用、云端账号与部署、Android / iOS 原生客户端。当前可展示的是个人本机 Web + MCP 应用，不能写成已上线多端产品。
+仍待交付：独立上下文的 direct/MCP 对照及人工语义评审、独立模型自动调用、云端账号与部署、iOS 原生客户端和实体手机验收。当前可展示的是本机 Web + Android + MCP 应用，不能写成已上线多端产品。

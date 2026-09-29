@@ -1,0 +1,92 @@
+{
+  "recorded_at": "2026-09-29T09:37:45.082677+00:00",
+  "tested_commit": "538aa3ca25b791eeda16bdbbff5c46e71b488d66",
+  "ci_run": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36549563579",
+  "ci_conclusion": "success",
+  "environment": {
+    "runner": "ubuntu-24.04",
+    "android_api": 35,
+    "android_version": "15",
+    "profile": "pixel_6",
+    "architecture": "x86_64",
+    "device_kind": "emulator"
+  },
+  "build": "Debug APK",
+  "unit_tests": {
+    "passed": 5,
+    "failed": 0
+  },
+  "device_tests": {
+    "passed": 2,
+    "failed": 0,
+    "skipped": 0,
+    "cases": [
+      "desktopCreatedMcpReviewCanBeContinuedOnAndroid",
+      "nativeCreateClarifyRestoreReadSourceAndExport"
+    ]
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 13
+  },
+  "apk": {
+    "file": "ai-workspace-android-v0.2.0-debug.apk",
+    "sha256": "6acf1952934eba02d06089394500defdbb096338967a21a8f73be123a65bc0d3",
+    "bytes": 9671131
+  },
+  "recording": {
+    "file": "ai-workspace-android-demo.mp4",
+    "sha256": "009c0affeea8d353b31e660bf4b0163049de155273cda80430140cfd93f6a822",
+    "bytes": 2339248,
+    "description": "Unedited emulator test recording; scripted and HTTP protocol fixtures; no narration.",
+    "decode_verification": {
+      "duration_seconds": 77.144678,
+      "width": 720,
+      "height": 1280,
+      "codec": "h264",
+      "decoded_frames": 312
+    }
+  },
+  "screenshots": [
+    {
+      "file": "01-clarification.png",
+      "sha256": "dd12fa94ab508d041d48fc3f94f541b62c7b62b6637413dd535a2e7b58659f61"
+    },
+    {
+      "file": "02-report.png",
+      "sha256": "1f7a5365c8841e3ba95b5e33b81c7db433cf496b765b94de932dc5bd1cc94fd1"
+    },
+    {
+      "file": "03-source.png",
+      "sha256": "df722592e2d97909dc1cdde69b64dc2a34e3f951a3209af8b92609d95940c892"
+    },
+    {
+      "file": "04-export.png",
+      "sha256": "03d17a4162700e536d8b88ec08c08509fa9cbace135234f7f139d4790da900ad"
+    },
+    {
+      "file": "05-cross-device.png",
+      "sha256": "f6e7a300fcc95b4c81acecd95dd66e659668739696d28de2a151aa0d24080ddb"
+    }
+  ],
+  "artifact": {
+    "id": 11023948402,
+    "sha256": "14ef174bf0b8d9ca6325155fd3a3232832c5c4697df9b533810a22ab64ddbdeb",
+    "name": "android-debug-and-evidence"
+  },
+  "boundaries": [
+    "No model inference in Android device tests.",
+    "No physical phone acceptance.",
+    "ADB loopback development connection only; no remote authentication or cloud deployment.",
+    "Debug signing only; no Google Play distribution.",
+    "iOS client is not implemented."
+  ],
+  "backend_ci": {
+    "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36549563596",
+    "platforms": [
+      "Windows",
+      "Ubuntu"
+    ],
+    "tests_per_platform": 24
+  }
+}
