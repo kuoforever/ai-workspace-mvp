@@ -1,0 +1,74 @@
+{
+  "verified_at": "2026-09-29T03:57:31.278044+00:00",
+  "revision": "3c18ffc626bac2f3143f31d0111f7077c27be2ac",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "scope": "fresh Git archive and new Python 3.12 venv; package download cache may be reused",
+  "model_calls": 0,
+  "steps": [
+    {
+      "command": [
+        "uv.EXE",
+        "sync",
+        "--frozen",
+        "--python",
+        "3.12"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.453,
+      "output": "Using CPython 3.12.14\nCreating virtual environment at: .venv\nInstalled 68 packages in 776ms\n + aiosqlite==0.22.1\n + annotated-doc==0.0.5\n + annotated-types==0.8.0\n + anyio==4.15.1\n + attrs==26.1.0\n + certifi==2026.7.22\n + cffi==2.1.1\n + charset-normalizer==3.5.1\n + click==8.5.0\n + colorama==0.4.6\n + cryptography==50.0.1\n + distro==1.9.0\n + fastapi==0.141.1\n + h11==0.16.0\n + httpcore==1.0.9\n + httpcore2==2.13.1\n + httpx==0.28.1\n + httpx-sse==0.4.3\n + httpx2==2.13.1\n + idna==3.20\n + iniconfig==2.3.0\n + jsonpatch==1.33\n + jsonpointer==3.1.1\n + jsonschema==4.26.0\n + jsonschema-specifications==2025.9.1\n + langchain-core==1.6.5\n + langchain-protocol==0.0.19\n + langgraph==1.2.10\n + langgraph-checkpoint==4.2.0\n + langgraph-checkpoint-sqlite==3.1.1\n + langgraph-prebuilt==1.1.0\n + langgraph-sdk==0.4.5\n + langsmith==0.14.1\n + mcp==1.30.0\n + orjson==3.12.0\n + ormsgpack==1.12.2\n + packaging==26.3\n + pluggy==1.6.0\n + pycparser==3.0\n + pydantic==2.13.4\n + pydantic-core==2.46.4\n + pydantic-settings==2.15.0\n + pygments==2.21.0\n + pyjwt==2.15.1\n + pytest==9.1.1\n + python-dotenv==1.2.3\n + python-multipart==0.0.32\n + pywin32==312\n + pyyaml==6.0.3\n + referencing==0.37.0\n + requests==2.34.2\n + requests-toolbelt==1.0.0\n + rpds-py==2026.6.3\n + ruff==0.16.9\n + sniffio==1.3.1\n + sqlite-vec==0.1.9\n + sse-starlette==3.5.0\n + starlette==1.7.0\n + tenacity==9.1.4\n + truststore==0.10.4\n + typing-extensions==4.16.0\n + typing-inspection==0.4.4\n + urllib3==2.8.0\n + uuid-utils==0.17.1\n + uvicorn==0.54.0\n + websockets==16.1.1\n + xxhash==4.0.1\n + zstandard==0.25.0"
+    },
+    {
+      "command": [
+        "uv.EXE",
+        "run",
+        "--no-sync",
+        "ruff",
+        "check",
+        "app",
+        "tests",
+        "scripts",
+        "evals"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.344,
+      "output": "All checks passed!"
+    },
+    {
+      "command": [
+        "node.EXE",
+        "--check",
+        "static/ai-review-ui.js"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.062,
+      "output": ""
+    },
+    {
+      "command": [
+        "uv.EXE",
+        "run",
+        "--no-sync",
+        "python",
+        "-m",
+        "evals.benchmark",
+        "freeze"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.141,
+      "output": "Frozen: a915fdffa0fc1d30ac37ae519968892a0cb9ce25059ffd3a62cec8896a88f938"
+    },
+    {
+      "command": [
+        "uv.EXE",
+        "run",
+        "--no-sync",
+        "pytest",
+        "-q"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 17.797,
+      "output": "........................                                                 [100%]\n24 passed in 11.77s"
+    }
+  ],
+  "passed": true
+}

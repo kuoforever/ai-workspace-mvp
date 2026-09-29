@@ -1,5 +1,7 @@
 # 当前切片验证 · 2026-09-29
 
+这是初次交付时的历史快照。后续新增了评测和跨平台测试、MCP 注册及 GitHub 交付；当前新环境验证以 [release-check.json](release-check.json) 为准。
+
 - `uv run pytest -q`：15 passed，7.55 秒。包括隔离 Web 子进程与真实 stdio MCP 客户端的协议测试。测试输出不作为模型质量评测。
 - `uv run ruff check app tests scripts`：通过。
 - `node --check static/ai-review-ui.js`：通过。

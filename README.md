@@ -1,5 +1,7 @@
 # AI Workspace · SWE 评审 MVP
 
+[![CI](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/ci.yml/badge.svg)](https://github.com/kuoforever/ai-workspace-mvp/actions/workflows/ci.yml)
+
 复用现有工程工作台，给设计评审增加一条可恢复、有来源的 AI 流程。Web 是首个客户端；MCP 连接宿主助手，后续原生 Android / iOS 共用 API。
 
 ![带来源引用的评审报告；此画面为明确标记的已保存报告回放](evidence/demo-replay.png)
@@ -59,6 +61,8 @@ GitHub Actions 在 Windows / Ubuntu 的 Python 3.12 环境运行锁定安装、L
 ## 实现与复用
 
 `app/api.py` 为 Web API，`review_service.py` 管固定图与状态，`store.py` 保存快照和命令去重，`knowledge.py` 管检索引用，`mcp_server.py` 是 stdio 适配器。`static/ai-review-ui.js` 增加页面面板。
+
+状态流转与客户端边界见 [设计说明](docs/DESIGN.md)。
 
 保留原 SWE UI 和内容；`knowledge/provenance.json` 记录源版本和 SHA-256。LangGraph 用法参考个人 [agent-crash-recovery-bench](https://github.com/kuoforever/agent-crash-recovery-bench) 的图/检查点/中断结构，新增评审节点与 Web/MCP 场景。PolicyFlow 只参考了输入契约、幂等及测试思路，没有搬入它的执行运行时，也没有借用历史测试结论。
 
