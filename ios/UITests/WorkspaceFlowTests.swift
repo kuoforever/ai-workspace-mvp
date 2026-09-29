@@ -102,40 +102,44 @@ final class WorkspaceFlowTests: XCTestCase {
         XCTAssertEqual(saved["status"] as? String, "completed")
         XCTAssertEqual((saved["answers"] as? [String: String])?["q1"], answer)
     }
-    func testDesktopCreatedMCPReviewContinuesOnPhone() throws {
+    func testRecordedModelReviewContinuesOnPhone() throws {
         tap(app.buttons["check-connection"])
         XCTAssertEqual(app.staticTexts["connection-status"].label, "工作台已连接")
-        let title = "iOS cross-device " + String(UUID().uuidString.prefix(8))
+        let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "mobile-review", withExtension: "json"))
+        let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
+        let title = "iOS model replay " + String(UUID().uuidString.prefix(8))
         let created = try object("/reviews", body: ["title": title,
-            "design": "订单使用请求键去重，但保留时间尚未明确。", "mode": "mcp",
-            "check_ids": ["CON-01"], "workbench_record_id": "ios-desktop-fixture"])
+            "design": try XCTUnwrap(fixture["design"]), "mode": "mcp",
+            "check_ids": try XCTUnwrap(fixture["check_ids"]), "workbench_record_id": "recorded-model-fixture"])
         let id = try XCTUnwrap(created["id"] as? String)
-        let context = try object("/reviews/" + id + "/context")
-        _ = try object("/reviews/" + id + "/model-output", body: [
-            "revision": try XCTUnwrap(created["revision"]), "input_sha256": try XCTUnwrap(context["input_sha256"]),
-            "output": ["kind": "questions", "summary": "协议夹具，未调用模型", "findings": [],
-                "questions": [["id": "cross-device", "check_id": "CON-01", "text": "幂等键保留多久？"]]]])
+        func submitRecorded(_ name: String) throws {
+            let context = try object("/reviews/" + id + "/context")
+            _ = try object("/reviews/" + id + "/model-output", body: [
+                "revision": try XCTUnwrap(context["revision"]), "input_sha256": try XCTUnwrap(context["input_sha256"]),
+                "output": try XCTUnwrap(fixture[name])])
+        }
+        try submitRecorded("questions")
         tap(app.buttons["refresh"])
         tap(app.buttons["review:" + id])
-        let input = app.textViews["answer:cross-device"]
-        tap(input); input.typeText("Seven days, then verify the business intent again.")
-        dismissKeyboard()
+        let answers = try XCTUnwrap(fixture["answers"] as? [String: String])
+        for key in answers.keys.sorted() {
+            let input = app.textViews["answer:" + key]
+            tap(input); input.typeText(try XCTUnwrap(answers[key]))
+            dismissKeyboard()
+        }
         tap(app.buttons["answer-submit"])
         waitStatus("等待助手")
         tap(app.buttons["copy-assistant-prompt"])
         XCTAssertTrue(app.buttons["copy-assistant-prompt"].label.contains("指令已复制"))
         let latest = try object("/reviews/" + id)
-        XCTAssertEqual((latest["answers"] as? [String: String])?["cross-device"], "Seven days, then verify the business intent again.")
-        let updatedContext = try object("/reviews/" + id + "/context")
-        let sources = try XCTUnwrap(latest["sources"] as? [String: [String: Any]])
-        let quote = try XCTUnwrap(sources["CON-01"]?["text"] as? String).components(separatedBy: "\n")[0]
-        _ = try object("/reviews/" + id + "/model-output", body: [
-            "revision": try XCTUnwrap(latest["revision"]), "input_sha256": try XCTUnwrap(updatedContext["input_sha256"]),
-            "output": ["kind": "report", "summary": "跨端协议夹具已完成；本测试未调用模型。", "questions": [],
-                "findings": [["check_id": "CON-01", "verdict": "unknown", "explanation": "测试仅验证跨端状态接续。",
-                    "recommendation": "真实设计仍需独立评审。", "citations": [["source_id": "CON-01", "quote": quote]]]]]])
+        XCTAssertEqual(latest["answers"] as? [String: String], answers)
+        try submitRecorded("report")
         waitStatus("已完成")
-        XCTAssertTrue(app.staticTexts["report-summary"].label.contains("跨端协议夹具已完成"))
+        let report = try XCTUnwrap(fixture["report"] as? [String: Any])
+        XCTAssertEqual(app.staticTexts["report-summary"].label, report["summary"] as? String)
         shot("05-cross-device")
+        tap(app.buttons["export"])
+        XCTAssertTrue(app.staticTexts["export-title"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["share-report"].exists)
     }
 }

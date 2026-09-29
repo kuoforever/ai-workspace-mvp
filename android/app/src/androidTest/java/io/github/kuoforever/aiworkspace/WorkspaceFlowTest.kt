@@ -92,59 +92,50 @@ class WorkspaceFlowTest {
         }
     }
 
-    @Test fun desktopCreatedMcpReviewCanBeContinuedOnAndroid() = runBlocking {
+    @Test fun recordedModelReviewCanBeContinuedOnAndroid() = runBlocking {
         ready()
         compose.onNodeWithTag("check-connection").performClick()
         ready()
         compose.onNodeWithTag("connection-status").assertTextEquals("工作台已连接")
+        val fixture = wireJson.parseToJsonElement(InstrumentationRegistry.getInstrumentation()
+            .context.assets.open("mobile-review.json").bufferedReader().use { it.readText() }).jsonObject
         val key = UUID.randomUUID().toString()
-        val title = "跨端协议验收 ${key.take(8)}"
+        val title = "模型报告回放 ${key.take(8)}"
         val created = wireJson.decodeFromString<ReviewSnapshot>(api.request("/reviews", wireJson.encodeToString(ReviewInput(
-            title = title, design = "订单请求使用请求键去重，错误恢复细节尚未确定。",
-            mode = "mcp", checkIds = listOf("CON-01"), recordId = "desktop-fixture",
+            title = title, design = fixture.getValue("design").jsonPrimitive.content,
+            mode = "mcp", checkIds = fixture.getValue("check_ids").jsonArray.map { it.jsonPrimitive.content },
+            recordId = "recorded-model-fixture",
         )), "$key-create"))
-        val context = wireJson.parseToJsonElement(api.request("/reviews/${created.id}/context")).jsonObject
-        val questions = buildJsonObject {
-            put("revision", created.revision)
-            put("input_sha256", context.getValue("input_sha256"))
-            putJsonObject("output") {
-                put("kind", "questions"); put("summary", "协议夹具，不是模型评审")
-                putJsonArray("findings") { }
-                putJsonArray("questions") { addJsonObject { put("id", "cross-device"); put("check_id", "CON-01"); put("text", "幂等键保留多久？") } }
-            }
+        suspend fun submitRecorded(name: String) {
+            val context = wireJson.parseToJsonElement(api.request("/reviews/${created.id}/context")).jsonObject
+            api.request("/reviews/${created.id}/model-output", buildJsonObject {
+                put("revision", context.getValue("revision"))
+                put("input_sha256", context.getValue("input_sha256"))
+                put("output", fixture.getValue(name))
+            }.toString(), "$key-$name")
         }
-        api.request("/reviews/${created.id}/model-output", questions.toString(), "$key-question")
+        submitRecorded("questions")
         compose.onNodeWithText("刷新").performClick()
         waitText(title)
         compose.onNodeWithText(title).performClick()
-        waitText("幂等键保留多久？")
-        compose.onNodeWithTag("answer:cross-device").performTextInput("保留七天，超过有效期需重新核对业务意图。")
+        waitText("等待补充")
+        val answers = fixture.getValue("answers").jsonObject
+        for ((id, answer) in answers) {
+            compose.onNodeWithTag("detail-list").performScrollToNode(hasTestTag("answer:$id"))
+            compose.onNodeWithTag("answer:$id").performTextReplacement(answer.jsonPrimitive.content)
+        }
         scrollClick("detail-list", "answer-submit")
         waitText("等待助手")
         scrollClick("detail-list", "copy-assistant-prompt")
         compose.onNodeWithTag("copy-assistant-prompt").assertTextContains("指令已复制")
         val latest = wireJson.decodeFromString<ReviewSnapshot>(api.request("/reviews/${created.id}"))
-        assertEquals("保留七天，超过有效期需重新核对业务意图。", latest.answers["cross-device"])
-        val latestContext = wireJson.parseToJsonElement(api.request("/reviews/${created.id}/context")).jsonObject
-        val output = buildJsonObject {
-            put("revision", latest.revision)
-            put("input_sha256", latestContext.getValue("input_sha256"))
-            putJsonObject("output") {
-                put("kind", "report"); put("summary", "跨端协议夹具已完成；本测试未调用模型。")
-                putJsonArray("questions") { }
-                putJsonArray("findings") { addJsonObject {
-                    put("check_id", "CON-01"); put("verdict", "unknown")
-                    put("explanation", "测试仅验证跨端状态接续。")
-                    put("recommendation", "真实设计仍需独立评审。")
-                    putJsonArray("citations") { addJsonObject {
-                        put("source_id", "CON-01"); put("quote", latest.sources.getValue("CON-01").text.lineSequence().first())
-                    } }
-                } }
-            }
-        }
-        api.request("/reviews/${created.id}/model-output", output.toString(), "$key-report")
-        waitText("跨端协议夹具已完成")
+        assertEquals(answers.mapValues { it.value.jsonPrimitive.content }, latest.answers)
+        submitRecorded("report")
+        waitText(fixture.getValue("report").jsonObject.getValue("summary").jsonPrimitive.content)
         compose.onNodeWithTag("status").assertTextEquals("已完成")
         shot("05-cross-device")
+        scrollClick("detail-list", "export")
+        waitText("导出预览")
+        compose.onNodeWithText("分享报告").assertIsDisplayed()
     }
 }

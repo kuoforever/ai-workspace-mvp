@@ -1,0 +1,23 @@
+{
+  "review_id": "5bc64c0a-d3fe-4289-a428-1fd63d295951",
+  "revision": 1,
+  "input_sha256": "bd79a28cb21067ed0b5455836adb5316d420ad0bc1dd39bd34eea8f56091318a",
+  "request_key": "mobile-polish-live-questions-v1",
+  "output": {
+    "kind": "questions",
+    "summary": "请求重放和本机保存顺序已有说明，还需确认幂等窗口及重试预算。",
+    "questions": [
+      {
+        "id": "retention",
+        "check_id": "CON-01",
+        "text": "幂等键如何绑定租户和订单意图、保存多久？过期后的重试如何查询已有订单？"
+      },
+      {
+        "id": "retry_budget",
+        "check_id": "FAIL-01",
+        "text": "哪些错误允许重试？最大尝试次数、累计时间预算和达到上限后的处理方式是什么？"
+      }
+    ],
+    "findings": []
+  }
+}

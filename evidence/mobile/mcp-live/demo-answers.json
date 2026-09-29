@@ -1,0 +1,7 @@
+{
+  "revision": 2,
+  "answers": {
+    "retention": "Scope is tenant + order intent + operation. Keep receipts for seven days. After expiry, query the stable order ID; an unknown result requires reconciliation, never a fresh create key.",
+    "retry_budget": "Retry only transport failures, timeouts and 503; at most three attempts within 30 seconds per original command. Persist attempts and deadline across restarts; stop and ask for reconciliation when either limit is reached."
+  }
+}

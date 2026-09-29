@@ -46,7 +46,7 @@ targets:
   AIWorkspaceUITests:
     type: bundle.ui-testing
     platform: iOS
-    sources: [UITests]
+    sources: [UITests, ../fixtures/mobile-review.json]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.kuoforever.aiworkspace.ios.uitests

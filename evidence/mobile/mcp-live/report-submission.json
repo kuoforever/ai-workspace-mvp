@@ -1,0 +1,53 @@
+{
+  "review_id": "5bc64c0a-d3fe-4289-a428-1fd63d295951",
+  "revision": 3,
+  "input_sha256": "bd79a28cb21067ed0b5455836adb5316d420ad0bc1dd39bd34eea8f56091318a",
+  "request_key": "mobile-polish-live-report-v1",
+  "output": {
+    "kind": "report",
+    "summary": "补充回答明确了幂等作用域、七天保存窗口和有界重试规则。两项检查在设计材料层面有依据；服务端原子提交、过期核对及重试预算的实现效果仍需单独验证。",
+    "questions": [],
+    "findings": [
+      {
+        "check_id": "CON-01",
+        "verdict": "supported",
+        "explanation": "同键同正文复用结果、不同正文拒绝，配合租户与订单意图作用域，可表达同一业务操作的重试。回答还要求七天后先查稳定订单标识，未知结果进入核对流程，避免直接换新键再次创建。材料未说明去重记录与订单写入如何原子提交，因此不能据此断言并发故障下已无重复订单。",
+        "recommendation": "将作用域和七天窗口写入接口契约，并明确订单写入与去重记录的事务边界；验证并发同键、窗口过期及响应丢失后的查询行为。",
+        "citations": [
+          {
+            "source_id": "CON-01",
+            "quote": "同一业务意图如何识别，重复请求怎样返回？"
+          },
+          {
+            "source_id": "input",
+            "quote": "相同键与相同正文返回已保存结果，相同键与不同正文返回 409。"
+          },
+          {
+            "source_id": "answer:retention",
+            "quote": "Scope is tenant + order intent + operation. Keep receipts for seven days. After expiry, query the stable order ID; an unknown result requires reconciliation, never a fresh create key."
+          }
+        ]
+      },
+      {
+        "check_id": "FAIL-01",
+        "verdict": "supported",
+        "explanation": "回答将允许重试的情况限定为传输失败、超时和 503，并给出同一原请求最多三次、累计三十秒的预算；次数和截止时间跨重启保存，达到任一上限后停止并转入核对。设计中的保留原请求不能被理解为允许无限重试。",
+        "recommendation": "明确三次是否包含首次发送，补充等待策略以及预算到期时仍未结束请求的处理；用跨重启测试验证计数与截止时间不被重置。",
+        "citations": [
+          {
+            "source_id": "FAIL-01",
+            "quote": "可重试错误是否分类，并限制重试次数与总预算？"
+          },
+          {
+            "source_id": "answer:retry_budget",
+            "quote": "Retry only transport failures, timeouts and 503; at most three attempts within 30 seconds per original command."
+          },
+          {
+            "source_id": "answer:retry_budget",
+            "quote": "Persist attempts and deadline across restarts; stop and ask for reconciliation when either limit is reached."
+          }
+        ]
+      }
+    ]
+  }
+}

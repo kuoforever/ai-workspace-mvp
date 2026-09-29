@@ -36,7 +36,9 @@ xcrun simctl launch booted io.github.kuoforever.aiworkspace.ios
 
 ## 状态管理
 
-MainActor 状态对象管理交互，Codable 文件以原子替换保存草稿、回答和待确认请求。网络结果未知时保留原请求，由用户重试。前台等待助手时轮询结果。
+MainActor 状态对象管理交互，Codable 文件以原子替换保存草稿、回答和待确认请求。网络结果未知或本机结果保存失败时保留原请求，由用户重试。前台等待助手时轮询结果。
+
+顶部提供连接检查与连接帮助，等待助手时可复制当前评审的处理指令。后端连通和助手处理状态分别展示。
 
 评审方式见[使用指南](../docs/usage.md)，数据与恢复规则见[架构设计](../docs/architecture.md#移动端恢复)。
 
@@ -49,5 +51,7 @@ bash scripts/ios-simulator-check.sh
 ```
 
 脚本执行 XCTest 和 XCUITest，输出模拟器应用、`.xcresult`、截图和录屏到 `ios-evidence/`。测试覆盖提交恢复、原生评审流程、草稿与回答重启恢复，以及跨端接续。
+
+两端使用同一份[已保存模型报告](../fixtures/mobile-review.json)验证澄清回答与报告接续。样本的真实 MCP 生成记录见[移动端验证](../evidence/mobile/README.md)，模拟器中执行的是回放。
 
 [测试结果与截图](../evidence/ios/README.md) · [来源与依赖](../ATTRIBUTION.md)
