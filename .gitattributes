@@ -1,0 +1,7 @@
+* text=auto eol=lf
+# These frozen inputs are hashed as bytes. Preserve them on every operating system.
+evals/cases.json -text
+evals/protocol.md -text
+knowledge/catalog.json -text
+*.png binary
+*.mp4 binary

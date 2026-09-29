@@ -1,0 +1,32 @@
+{
+  "recorded_at": "2026-09-29T03:30:16.590971+00:00",
+  "python": "3.12.14",
+  "platform": "Windows",
+  "tests": {
+    "command": "uv run pytest -q",
+    "passed": 23,
+    "failed": 0,
+    "duration_seconds": 5.38
+  },
+  "lint": {
+    "command": "uv run ruff check app tests scripts evals",
+    "passed": true
+  },
+  "freeze_sha256": "a915fdffa0fc1d30ac37ae519968892a0cb9ce25059ffd3a62cec8896a88f938",
+  "implementation_sha256": {
+    "app/api.py": "95e31dcfeb9c990f3854021c76a96aa0e6ecebad55281776b2dc9b527e7e8ace",
+    "app/knowledge.py": "5b307d680ca048bb51519763f1898f6f39fa02c27fb28ca5267b15182d1d1649",
+    "app/mcp_server.py": "093025c6170eb38c793174d7db511b38c27125ae1a711fc1a5eeb1954f5c721d",
+    "app/review_service.py": "8b3941ad2b7bd4208d8ccf47ebd5cec73cf95b532375d6a968082a9113717f7c",
+    "app/schemas.py": "61c47bd845c9a563c84d89fc34fff3339bd91ca2ba7cbeaaf7c0d1c850585c2c",
+    "app/store.py": "6df40f0508b0aa45da7fc35c1608d3c5b644e43e63d8ddf1d61f936b3dc68a40",
+    "app/__init__.py": "32f33eb7946899f97c2a0726434e03efbdb3ca57a0899c746e7381fea19d8363",
+    "evals/benchmark.py": "c9a291da3380f75a49d8f8e60d72ff32bfc9cf6c2b0d7f030c9579c224c53652",
+    "evals/mcp_run.py": "33e35d0ce81813464fc1c5d87f210fa0356e6b7d6bed50f16ebbe171a2ff8595",
+    "evals/__init__.py": "35539d99e5a7d4a3640256262303cf3f7404bdff84948cc2e8007ce1c88dc58e"
+  },
+  "persistent_mcp_reports": 8,
+  "exact_citations": 17,
+  "model_usage": null,
+  "independent_quality_evaluation": false
+}

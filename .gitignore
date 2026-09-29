@@ -1,0 +1,14 @@
+.venv/
+.env
+data/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+work/
+dist/

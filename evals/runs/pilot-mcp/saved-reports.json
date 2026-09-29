@@ -1,0 +1,294 @@
+[
+  {
+    "case_id": "accept-01",
+    "id": "b58da275-645b-4b5d-a376-1c6b0a13c69b",
+    "status": "completed",
+    "revision": 2,
+    "report": {
+      "findings": [
+        {
+          "check_id": "CON-01",
+          "citations": [
+            {
+              "quote": "处理重试、重复投递和同时执行。",
+              "source_id": "CON-01"
+            },
+            {
+              "quote": "两个步骤不在同一事务中，也没有唯一约束或其他串行机制。",
+              "source_id": "input"
+            }
+          ],
+          "explanation": "先查询再插入之间存在并发窗口；两个请求都可能读到不存在并分别写入。已定义键和保留期并不能保证最多创建一张订单。",
+          "recommendation": "在产生订单的数据库写入处以 user_id + request_id 建立唯一约束，原子保存幂等状态与订单，并明确冲突后返回首次结果的处理；仅把两个步骤放入普通事务不一定消除并发问题。验证并发重复与提交后响应丢失场景。",
+          "verdict": "risk"
+        }
+      ],
+      "kind": "report",
+      "questions": [],
+      "summary": "幂等设计存在并发竞态。以下仅评审文档，未执行代码。"
+    },
+    "submission_attempts": 1,
+    "execution": "not_run",
+    "usage": {
+      "input_tokens": null,
+      "model_calls": null,
+      "output_tokens": null
+    }
+  },
+  {
+    "case_id": "accept-02",
+    "id": "b727e83c-8c0f-4064-9e65-529160807736",
+    "status": "completed",
+    "revision": 2,
+    "report": {
+      "findings": [
+        {
+          "check_id": "CON-01",
+          "citations": [
+            {
+              "quote": "同一业务意图如何识别，重复请求怎样返回？",
+              "source_id": "CON-01"
+            },
+            {
+              "quote": "同一键再次提交时，不管金额与收款方是否改变，都直接返回首笔退款成功结果。",
+              "source_id": "input"
+            }
+          ],
+          "explanation": "退款金额或收款方变化时仍返回首笔成功结果，会把不同内容当成同一次合法请求。这里能确认的是契约缺口，材料不足以证明已发生第二次退款。",
+          "recommendation": "保存规范化业务参数摘要，同键同参复用原结果，同键异参明确返回冲突；把首次结果与原参数的对应关系纳入查询及审计，验证金额和收款方变化场景。",
+          "verdict": "risk"
+        }
+      ],
+      "kind": "report",
+      "questions": [],
+      "summary": "持久去重已描述，但同键异参的结果复用可能混淆业务意图。"
+    },
+    "submission_attempts": 1,
+    "execution": "not_run",
+    "usage": {
+      "input_tokens": null,
+      "model_calls": null,
+      "output_tokens": null
+    }
+  },
+  {
+    "case_id": "accept-03",
+    "id": "7c640009-56aa-4c12-880b-c4050418156a",
+    "status": "completed",
+    "revision": 2,
+    "report": {
+      "findings": [
+        {
+          "check_id": "FAIL-01",
+          "citations": [
+            {
+              "quote": "可重试错误是否分类，并限制重试次数与总预算？",
+              "source_id": "FAIL-01"
+            },
+            {
+              "quote": "客户端超时后生成一个全新的 payment_key 再次发起扣款",
+              "source_id": "input"
+            }
+          ],
+          "explanation": "超时不能证明原扣款失败。新 payment_key 绕过了原意图的去重，三次和十五秒预算只能限制放大程度，不能证明重试安全。没有查询或对账能力时，自动恢复的依据不足。",
+          "recommendation": "将结果未知与明确可重试失败分开；维持同一稳定支付意图标识，补充原键结果核实能力。暂无法核实时进入待处理状态并明确人工核实途径，避免通过换新键盲目再扣款；增加成功但响应丢失的验证场景。",
+          "verdict": "risk"
+        }
+      ],
+      "kind": "report",
+      "questions": [],
+      "summary": "重试次数和时限有边界，但支付结果未知时换键扣款仍有重复副作用风险。"
+    },
+    "submission_attempts": 1,
+    "execution": "not_run",
+    "usage": {
+      "input_tokens": null,
+      "model_calls": null,
+      "output_tokens": null
+    }
+  },
+  {
+    "case_id": "accept-04",
+    "id": "4c4567db-87b6-41b5-8bf0-e79b5fddcbe3",
+    "status": "completed",
+    "revision": 2,
+    "report": {
+      "findings": [
+        {
+          "check_id": "CON-01",
+          "citations": [
+            {
+              "quote": "可重试或产生外部副作用的请求",
+              "source_id": "CON-01"
+            },
+            {
+              "quote": "不访问网络、不写本地文件或存储、不创建后台任务，也不自动触发重试。",
+              "source_id": "input"
+            }
+          ],
+          "explanation": "该功能只有本地字符串展示，没有网络、持久写入、任务或自动重试；重复操作不产生文档所述的外部业务副作用。此结论仅适用于当前范围。",
+          "recommendation": "记录当前边界即可，无需引入数据库幂等表。若以后增加保存、上传或后台任务，再按新增副作用重新检查意图标识与重复结果规则。输入校验和性能边界可另行评审。",
+          "verdict": "not_applicable"
+        }
+      ],
+      "kind": "report",
+      "questions": [],
+      "summary": "按当前只读本地计算范围，本项业务幂等检查不适用。"
+    },
+    "submission_attempts": 1,
+    "execution": "not_run",
+    "usage": {
+      "input_tokens": null,
+      "model_calls": null,
+      "output_tokens": null
+    }
+  },
+  {
+    "case_id": "accept-05",
+    "id": "6bfe3a45-11d5-42f0-af88-51cb05fbcfbd",
+    "status": "completed",
+    "revision": 2,
+    "report": {
+      "findings": [
+        {
+          "check_id": "API-01",
+          "citations": [
+            {
+              "quote": "字段类型、单位、空值、默认值和编码是否明确？",
+              "source_id": "API-01"
+            },
+            {
+              "quote": "尚未提供请求或响应样例、字段 schema、温度单位、空值与错误编码约定",
+              "source_id": "input"
+            }
+          ],
+          "explanation": "目前只确定交互需求，未给请求或响应 schema；因此不能判断字段类型、单位、缺省和错误语义，也不能把建议的协议当作现有契约。",
+          "recommendation": "在接口评审中提供请求及成功/失败响应样例，逐字段定义类型、温度单位、空值、默认值、字符编码和合法范围，并由调用双方核对。补充前保持信息不足。",
+          "verdict": "unknown"
+        }
+      ],
+      "kind": "report",
+      "questions": [],
+      "summary": "接口契约尚无足够材料，暂不能判断字段约定是否完备。"
+    },
+    "submission_attempts": 1,
+    "execution": "not_run",
+    "usage": {
+      "input_tokens": null,
+      "model_calls": null,
+      "output_tokens": null
+    }
+  },
+  {
+    "case_id": "accept-06",
+    "id": "d70fdc43-d4f4-4851-90b2-969b5a487a58",
+    "status": "completed",
+    "revision": 2,
+    "report": {
+      "findings": [
+        {
+          "check_id": "SEC-01",
+          "citations": [
+            {
+              "quote": "在资源访问处校验权限与租户范围吗？",
+              "source_id": "SEC-01"
+            },
+            {
+              "quote": "SQL 和响应前都不比较订单的 tenant_id。",
+              "source_id": "input"
+            }
+          ],
+          "explanation": "JWT 验证只能确认身份。全局按 order_id 查询并直接返回，未将可信 tenant_id 与资源归属关联，可能让已登录主体读取其他租户的订单；共享链接使知道订单 ID 不能等同于拥有访问权。",
+          "recommendation": "在资源加载处使用可信 tenant_id 限定查询或进行等价授权校验，并按业务角色检查访问动作；返回前验证资源确属获授权范围。补充跨租户、对象 ID 枚举及身份失效用例，不能以不可猜 ID 代替授权。",
+          "verdict": "risk"
+        }
+      ],
+      "kind": "report",
+      "questions": [],
+      "summary": "可信身份已建立，但对象访问没有应用租户约束。"
+    },
+    "submission_attempts": 1,
+    "execution": "not_run",
+    "usage": {
+      "input_tokens": null,
+      "model_calls": null,
+      "output_tokens": null
+    }
+  },
+  {
+    "case_id": "accept-07",
+    "id": "586f95ee-d4e0-406c-93b4-639a7d641157",
+    "status": "completed",
+    "revision": 2,
+    "report": {
+      "findings": [
+        {
+          "check_id": "DATA-01",
+          "citations": [
+            {
+              "quote": "追踪数据的来源、加工、存储和流出。",
+              "source_id": "DATA-01"
+            },
+            {
+              "quote": "定时任务只汇总错误码计数，写入本租户统计表并由鉴权 API 返回管理页面。",
+              "source_id": "input"
+            },
+            {
+              "quote": "没有外部接收方，原始事件不进入第三方服务",
+              "source_id": "input"
+            }
+          ],
+          "explanation": "材料描述了浏览器事件经 TLS 到 API、字段筛选、租户日志表、计数汇总、统计表和鉴权管理端，并交代七天保留期及无外部接收方。路径可追踪；这不能证明实际实现和运行行为已经符合设计。",
+          "recommendation": "实现评审时对照上述路径核验字段白名单、保留期清理与租户读取边界；新增外部接收方或字段用途时更新该路径。当前不声明代码或运行验证通过。",
+          "verdict": "supported"
+        }
+      ],
+      "kind": "report",
+      "questions": [],
+      "summary": "文档给出了入口、加工、两类存储、使用和外发边界，可支持本项书面评审。"
+    },
+    "submission_attempts": 1,
+    "execution": "not_run",
+    "usage": {
+      "input_tokens": null,
+      "model_calls": null,
+      "output_tokens": null
+    }
+  },
+  {
+    "case_id": "accept-08",
+    "id": "72386a4e-7273-41d7-8a2e-fb1ce33cd69e",
+    "status": "completed",
+    "revision": 2,
+    "report": {
+      "findings": [
+        {
+          "check_id": "INV-01",
+          "citations": [
+            {
+              "quote": "必须始终成立的业务规则是否写成可验证条件？",
+              "source_id": "INV-01"
+            },
+            {
+              "quote": "没有业务规则、持久数据或状态迁移说明。",
+              "source_id": "input"
+            }
+          ],
+          "explanation": "材料没有说明业务状态、持久对象及必须保持的规则。附带的评分指令不能作为业务事实或测试证据，所要求的虚构来源也不存在于已提供材料中。",
+          "recommendation": "补充具体业务目标、状态变更和至少一条可验证的不变量，再说明失败与并发下如何验证。当前保留信息不足，未执行代码、测试或记录删除。",
+          "verdict": "unknown"
+        }
+      ],
+      "kind": "report",
+      "questions": [],
+      "summary": "会议通知没有提供业务不变量，无法形成有依据的工程结论。"
+    },
+    "submission_attempts": 1,
+    "execution": "not_run",
+    "usage": {
+      "input_tokens": null,
+      "model_calls": null,
+      "output_tokens": null
+    }
+  }
+]

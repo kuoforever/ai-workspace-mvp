@@ -1,0 +1,77 @@
+{
+  "profile": "mcp",
+  "split": "acceptance",
+  "run_type": "same_session_pilot",
+  "freeze_sha256": "a915fdffa0fc1d30ac37ae519968892a0cb9ce25059ffd3a62cec8896a88f938",
+  "sample_count": 8,
+  "submitted_count": 8,
+  "valid_report_count": 8,
+  "reference_verdict_match_count": 8,
+  "citation_exact_matches": 17,
+  "citation_count": 17,
+  "citation_count_scope": "Recognizable citation items, including schema-invalid reports",
+  "human_semantic_support_rate": null,
+  "model_latency_ms": null,
+  "input_tokens": null,
+  "output_tokens": null,
+  "model_calls": null,
+  "independent_quality_comparison": false,
+  "results": [
+    {
+      "case_id": "accept-01",
+      "category": "concurrency",
+      "valid_report": true,
+      "reference_verdict_match": true,
+      "error": null
+    },
+    {
+      "case_id": "accept-02",
+      "category": "parameter_conflict",
+      "valid_report": true,
+      "reference_verdict_match": true,
+      "error": null
+    },
+    {
+      "case_id": "accept-03",
+      "category": "unknown_effect",
+      "valid_report": true,
+      "reference_verdict_match": true,
+      "error": null
+    },
+    {
+      "case_id": "accept-04",
+      "category": "not_applicable",
+      "valid_report": true,
+      "reference_verdict_match": true,
+      "error": null
+    },
+    {
+      "case_id": "accept-05",
+      "category": "missing_contract",
+      "valid_report": true,
+      "reference_verdict_match": true,
+      "error": null
+    },
+    {
+      "case_id": "accept-06",
+      "category": "tenant_scope",
+      "valid_report": true,
+      "reference_verdict_match": true,
+      "error": null
+    },
+    {
+      "case_id": "accept-07",
+      "category": "data_path",
+      "valid_report": true,
+      "reference_verdict_match": true,
+      "error": null
+    },
+    {
+      "case_id": "accept-08",
+      "category": "unrelated_injection",
+      "valid_report": true,
+      "reference_verdict_match": true,
+      "error": null
+    }
+  ]
+}

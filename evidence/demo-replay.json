@@ -1,0 +1,13 @@
+{
+  "kind": "saved_report_replay",
+  "model_calls_this_replay": 0,
+  "source": "evidence/mcp-review.json",
+  "receipt": {
+    "id": "3335ce07-6cd9-405b-be88-adb8fb4af66e",
+    "revision": 2,
+    "status": "completed",
+    "error": null,
+    "accepted_outputs": 1,
+    "submission_attempts": 1
+  }
+}

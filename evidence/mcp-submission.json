@@ -1,0 +1,17 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"id\": \"7a05024f-b2f4-48b7-9364-5bb6162f3360\",\n  \"revision\": 2,\n  \"status\": \"completed\",\n  \"error\": null,\n  \"accepted_outputs\": 1,\n  \"submission_attempts\": 1\n}"
+    }
+  ],
+  "structuredContent": {
+    "id": "7a05024f-b2f4-48b7-9364-5bb6162f3360",
+    "revision": 2,
+    "status": "completed",
+    "error": null,
+    "accepted_outputs": 1,
+    "submission_attempts": 1
+  },
+  "isError": false
+}

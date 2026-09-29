@@ -1,0 +1,18 @@
+{
+  "freeze_sha256": "a915fdffa0fc1d30ac37ae519968892a0cb9ce25059ffd3a62cec8896a88f938",
+  "direct": {
+    "status": "not_run",
+    "input": "inputs/direct-acceptance.json",
+    "metrics": null
+  },
+  "mcp": {
+    "status": "same_session_pilot",
+    "score": "runs/pilot-mcp/score.json",
+    "valid_reports": 8,
+    "sample_count": 8
+  },
+  "independent_paired_comparison": false,
+  "quality_delta": null,
+  "human_review": null,
+  "reason": "MCP pilot was generated in the fixture-authoring conversation. No independent direct baseline has been run."
+}

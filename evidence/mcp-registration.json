@@ -1,0 +1,18 @@
+{
+  "verified_at": "2026-09-29T03:55:11.572179+00:00",
+  "configuration_name": "swe-workspace",
+  "enabled": true,
+  "transport": "stdio",
+  "server_name": "AI Workspace — SWE Review",
+  "tools": [
+    "get_check_catalog",
+    "get_review_context",
+    "list_pending_reviews",
+    "start_review",
+    "submit_review_output"
+  ],
+  "catalog_read": "CON-01",
+  "passed": true,
+  "scope": "Registered Codex command launched with official MCP client; current chat tool refresh is not asserted",
+  "model_calls": 0
+}

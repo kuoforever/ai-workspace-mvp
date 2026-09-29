@@ -1,0 +1,27 @@
+{
+  "version": "v1",
+  "files": {
+    "evals\\cases.json": "48f49f280e5d19f9ac0ee0327d2885097a17ba80693669ba5c42d01599eca5d7",
+    "evals\\protocol.md": "a56af6a5e195e339598895ad3e5c129dfb8647525d3da883220e1d27d2272fe1",
+    "knowledge\\catalog.json": "8c02547b023ba1167f2b3ea44477c3be12fc605646eb07103891fd66f1f7b6a1"
+  },
+  "output_schema_sha256": "ca030b57dec3e3691bf1e817d28dd3107b2c4e26890837566ef0f52cc68c4b3a",
+  "split": {
+    "dev": [
+      "dev-01",
+      "dev-02",
+      "dev-03",
+      "dev-04"
+    ],
+    "acceptance": [
+      "accept-01",
+      "accept-02",
+      "accept-03",
+      "accept-04",
+      "accept-05",
+      "accept-06",
+      "accept-07",
+      "accept-08"
+    ]
+  }
+}

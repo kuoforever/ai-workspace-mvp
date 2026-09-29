@@ -1,0 +1,24 @@
+[project]
+name = "ai-workspace-mvp"
+version = "0.1.0"
+description = "A local SWE design review workspace with durable, cited reports"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.30,<1",
+  "langgraph==1.2.10",
+  "langgraph-checkpoint-sqlite==3.1.1",
+  "mcp>=1.28,<2",
+  "pydantic==2.13.4",
+  "python-dotenv>=1,<2",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "httpx>=0.28,<1", "ruff>=0.12,<1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100

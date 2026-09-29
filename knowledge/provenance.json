@@ -1,0 +1,13 @@
+{
+  "source": "C:\\Users\\Alienware\\Desktop\\Chat-Hisory-PDF\\SWE\\工作台.html",
+  "sha256": "5f77bcca3df2c8b4bcf86a14916b0958a1ffb6f5b186925aa1cb303a3744688e",
+  "version": "2026.09.27-2",
+  "checks": 249,
+  "decisions": 33,
+  "docs": 110,
+  "modifications": [
+    "AI entry and external assets",
+    "read-only document navigation",
+    "remove AI add-on from legacy export"
+  ]
+}
