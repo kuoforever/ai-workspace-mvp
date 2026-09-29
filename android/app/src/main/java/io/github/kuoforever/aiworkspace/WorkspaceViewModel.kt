@@ -47,7 +47,7 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Devic
             try { block() }
             catch (failure: ApiFailure) {
                 ui = ui.copy(error = if (failure.status == 409)
-                    "内容已在另一端更新，请刷新后核对。输入草稿已保留。"
+                    "${failure.message}。输入草稿已保留，请刷新核对后再提交。"
                     else failure.message ?: "提交被拒绝，草稿已保留。")
             } catch (_: IOException) {
                 ui = ui.copy(cached = true, error = "未能连接工作台。请确认电脑服务与设备转发已启动；草稿仍保存在本机。")

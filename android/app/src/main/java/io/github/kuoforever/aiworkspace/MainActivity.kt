@@ -58,7 +58,7 @@ private fun Workspace(vm: WorkspaceViewModel) {
                 delay(3000)
                 val current = vm.ui
                 if (current.page == Page.DETAIL && !current.busy && current.error == null &&
-                    current.review?.status in listOf("waiting_model", "waiting_input", "running")) vm.refresh()
+                    current.review?.status in listOf("waiting_model", "running")) vm.refresh()
             }
         }
     }
@@ -221,7 +221,7 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel) {
                         Text("下一步", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                         Text(finding.recommendation, style = MaterialTheme.typography.bodyMedium)
                         finding.citations.forEachIndexed { index, citation ->
-                            TextButton(onClick = { vm.source(citation) }, modifier = Modifier.testTag("source:${finding.checkId}:$index")) { Text("查看依据 · ${citation.sourceId}") }
+                            TextButton(onClick = { vm.source(citation) }, enabled = !state.busy, modifier = Modifier.testTag("source:${finding.checkId}:$index")) { Text("查看依据 · ${citation.sourceId}") }
                         }
                     }
                 }

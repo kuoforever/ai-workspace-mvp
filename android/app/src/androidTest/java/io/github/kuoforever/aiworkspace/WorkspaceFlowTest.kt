@@ -58,7 +58,7 @@ class WorkspaceFlowTest {
         compose.onNodeWithTag("answer:q1").performTextInput("先查询支付状态，再对明确失败执行有限重试。")
         compose.activityRule.scenario.recreate()
         ready()
-        compose.onNodeWithTag("answer:q1").assertTextContains("先查询支付状态")
+        compose.onNodeWithTag("answer:q1").assertTextContains("先查询支付状态", substring = true)
         scrollClick("detail-list", "answer-submit")
         waitText("已完成")
         shot("02-report")
