@@ -6,8 +6,6 @@ xcodegen --version | tee ios-evidence/xcodegen-version.txt
 xcrun simctl list devices available --json >ios-evidence/devices.json
 device_id=$(.venv/bin/python -c 'import json; d=json.load(open("ios-evidence/devices.json")); print(next(v["udid"] for k,rows in d["devices"].items() if k.endswith("iOS-18-5") for v in rows if v["name"]=="iPhone 16"))')
 printf '%s\n' "$device_id" >ios-evidence/device-id.txt
-xcrun simctl boot "$device_id" || true
-xcrun simctl bootstatus "$device_id" -b
 bash ios/generate.sh
 xcodebuild build-for-testing -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
   -destination "platform=iOS Simulator,id=$device_id" -derivedDataPath ios/build \
@@ -16,6 +14,8 @@ xcodebuild build-for-testing -project ios/AIWorkspace.xcodeproj -scheme AIWorksp
   }
 lipo -archs ios/build/Build/Products/Debug-iphonesimulator/AIWorkspace.app/AIWorkspace >ios-evidence/architectures.txt
 ditto -c -k --sequesterRsrc --keepParent ios/build/Build/Products/Debug-iphonesimulator/AIWorkspace.app ios-evidence/AIWorkspace-simulator.app.zip
+xcrun simctl boot "$device_id" || true
+xcrun simctl bootstatus "$device_id" -b
 xcrun simctl io "$device_id" recordVideo --codec=h264 ios-evidence/ci-demo.mp4 >ios-evidence/recording.log 2>&1 &
 recording_pid=$!
 finish_recording() {
