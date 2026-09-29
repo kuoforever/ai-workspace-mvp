@@ -30,7 +30,8 @@ jobs:
       - name: Install backend and start isolated service
         run: |
           uv sync --frozen --python 3.12
-          AI_WORKSPACE_DATA="$RUNNER_TEMP/android-data" uv run --no-sync uvicorn app.api:app --host 127.0.0.1 --port 8765 >"$RUNNER_TEMP/android-api.log" 2>&1 &
+          AI_WORKSPACE_DATA="$RUNNER_TEMP/android-data" .venv/bin/python -m uvicorn app.api:app --host 127.0.0.1 --port 8765 >"$RUNNER_TEMP/android-api.log" 2>&1 &
+          echo "$!" >"$RUNNER_TEMP/android-api.pid"
           for attempt in {1..30}; do
             if curl --fail --silent http://127.0.0.1:8765/api/config; then break; fi
             sleep 1
@@ -62,3 +63,9 @@ jobs:
             android/app/build/outputs/androidTest-results/
             android-evidence/
             ${{ runner.temp }}/android-api.log
+      - name: Stop isolated backend before cache cleanup
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/android-api.pid" ]; then
+            kill "$(cat "$RUNNER_TEMP/android-api.pid")" || true
+          fi
