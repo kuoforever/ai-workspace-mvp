@@ -2,9 +2,9 @@ name: Android
 
 on:
   push:
-    paths: ["android/**", "app/**", "knowledge/**", "scripts/android-emulator-check.sh", ".github/workflows/android.yml", "uv.lock"]
+    paths: ["android/**", "app/**", "knowledge/**", "scripts/android-*.sh", "scripts/android-*.py", ".github/workflows/android.yml", "uv.lock"]
   pull_request:
-    paths: ["android/**", "app/**", "knowledge/**", "scripts/android-emulator-check.sh", ".github/workflows/android.yml", "uv.lock"]
+    paths: ["android/**", "app/**", "knowledge/**", "scripts/android-*.sh", "scripts/android-*.py", ".github/workflows/android.yml", "uv.lock"]
   workflow_dispatch:
 
 permissions:

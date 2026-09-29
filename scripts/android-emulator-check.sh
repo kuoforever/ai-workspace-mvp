@@ -26,5 +26,9 @@ cat android-evidence/recording.log
 if [ "$test_exit" -eq 0 ]; then
     test -s android-evidence/screenshots/02-report.png
     test -s android-evidence/ci-demo.mp4
+    # Connected tests uninstall their target. Reinstall and drive it from outside
+    # the application process so force-stop really destroys the ViewModel.
+    adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+    .venv/bin/python scripts/android-process-check.py
 fi
 exit "$test_exit"

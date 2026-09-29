@@ -3,10 +3,18 @@ import SwiftUI
 @MainActor struct WorkspaceView: View {
     @ObservedObject var model: WorkspaceModel
     @Environment(\.scenePhase) private var scenePhase
+    @State private var connectionHelp = false
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 if model.busy { ProgressView().accessibilityIdentifier("busy").padding(6) }
+                HStack {
+                    Text(model.connection.rawValue).font(.caption).accessibilityIdentifier("connection-status")
+                    Spacer()
+                    Button("检查连接") { Task { await model.checkConnection() } }
+                        .disabled(model.busy || model.startupError != nil).accessibilityIdentifier("check-connection")
+                    Button("帮助") { connectionHelp = true }
+                }.font(.footnote).padding(.horizontal, 20).padding(.vertical, 8)
                 if let message = model.startupError ?? model.error { notice(message, color: .red) }
                 if model.pending != nil {
                     notice("上次提交结果尚未确认。重试沿用原请求，输入暂时锁定。", color: .workspaceTeal)
@@ -18,6 +26,11 @@ import SwiftUI
             .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("AI Workspace")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("连接电脑工作台", isPresented: $connectionHelp) {
+                Button("知道了", role: .cancel) { }
+            } message: {
+                Text("在运行此模拟器的 Mac 上启动 AI Workspace 后端，再检查连接并刷新。\n\n当前地址：http://localhost:8765\n连接成功表示后端可用；评审仍需电脑上的 MCP 助手处理。")
+            }
             .toolbar {
                 if model.page != .home {
                     ToolbarItem(placement: .topBarLeading) {
@@ -160,6 +173,7 @@ import SwiftUI
 
 @MainActor private struct ReviewDetailView: View {
     @ObservedObject var model: WorkspaceModel
+    @State private var copied = false
     var body: some View {
         ScrollView {
             if let review = model.review {
@@ -171,7 +185,14 @@ import SwiftUI
                     if model.cached { Text("缓存快照 · 刷新以核对最新状态").font(.footnote).foregroundStyle(.orange) }
                     if review.input.mode == "scripted" { Text("离线模拟 · 未经模型评审").foregroundStyle(.secondary) }
                     if review.status == "waiting_model" {
-                        Text("材料已保存。请让电脑中的助手处理此评审，结果返回后这里会自动更新。")
+                        Text(model.cached ? "这是上次保存的等待状态，请先恢复连接并刷新。" : "材料已保存，等待电脑助手接手。将下面的指令发送给已连接 MCP 的助手；结果返回后，此页面会自动更新。")
+                        Button(copied ? "指令已复制" : "复制助手指令", systemImage: "doc.on.doc") {
+                            UIPasteboard.general.string = assistantPrompt(review.id)
+                            copied = true
+                        }.accessibilityIdentifier("copy-assistant-prompt")
+                    }
+                    if review.status == "running" {
+                        Text("工作台正在保存或处理本次操作，完成后页面会自动更新。")
                     }
                     if let error = review.error { Text(error).foregroundStyle(.red) }
                     if review.status == "waiting_input" {

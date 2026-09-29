@@ -94,6 +94,9 @@ class WorkspaceFlowTest {
 
     @Test fun desktopCreatedMcpReviewCanBeContinuedOnAndroid() = runBlocking {
         ready()
+        compose.onNodeWithTag("check-connection").performClick()
+        ready()
+        compose.onNodeWithTag("connection-status").assertTextEquals("工作台已连接")
         val key = UUID.randomUUID().toString()
         val title = "跨端协议验收 ${key.take(8)}"
         val created = wireJson.decodeFromString<ReviewSnapshot>(api.request("/reviews", wireJson.encodeToString(ReviewInput(
@@ -118,6 +121,8 @@ class WorkspaceFlowTest {
         compose.onNodeWithTag("answer:cross-device").performTextInput("保留七天，超过有效期需重新核对业务意图。")
         scrollClick("detail-list", "answer-submit")
         waitText("等待助手")
+        scrollClick("detail-list", "copy-assistant-prompt")
+        compose.onNodeWithTag("copy-assistant-prompt").assertTextContains("指令已复制")
         val latest = wireJson.decodeFromString<ReviewSnapshot>(api.request("/reviews/${created.id}"))
         assertEquals("保留七天，超过有效期需重新核对业务意图。", latest.answers["cross-device"])
         val latestContext = wireJson.parseToJsonElement(api.request("/reviews/${created.id}/context")).jsonObject

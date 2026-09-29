@@ -15,20 +15,24 @@ enum Page: Equatable { case home, create, detail, source, export }
     @Published private(set) var cached = true
     @Published private(set) var error: String?
     @Published private(set) var startupError: String?
+    @Published private(set) var connection: ConnectionState = .unknown
     @Published private(set) var source: Source?
     @Published private(set) var quote = ""
     @Published private(set) var exported = ""
     private let api: WorkspaceAPI
+    private lazy var observedAPI = ObservedWorkspaceAPI(base: api) { [weak self] state in
+        self?.connection = state
+    }
     private var store: DeviceStore?
     private var journal: CommandJournal?
     private var selectedID: String?
 
-    init(api: WorkspaceAPI? = nil) {
+    init(api: WorkspaceAPI? = nil, store suppliedStore: DeviceStore? = nil) {
         self.api = api ?? LocalWorkspaceAPI()
         do {
-            let store = try DeviceStore()
+            let store = try suppliedStore ?? DeviceStore()
             self.store = store
-            journal = try CommandJournal(store: store, api: self.api)
+            journal = try CommandJournal(store: store, api: observedAPI)
             pending = journal?.pending
             draft = try store.load("draft.json", as: ReviewInput.self) ?? ReviewInput()
             rows = try store.load("list.json", as: [ReviewSummary].self) ?? []
@@ -60,15 +64,28 @@ enum Page: Equatable { case home, create, detail, source, export }
     func refresh() async {
         await operation {
             if self.checks.isEmpty {
-                self.checks = try Wire.decode(Catalog.self, await self.api.get("/catalog")).checks
+                self.checks = try Wire.decode(Catalog.self, await self.observedAPI.get("/catalog")).checks
             }
             if self.page == .detail, let id = self.selectedID {
-                try self.show(Wire.decode(ReviewSnapshot.self, await self.api.get("/reviews/\(id)")))
+                try self.show(Wire.decode(ReviewSnapshot.self, await self.observedAPI.get("/reviews/\(id)")))
             } else {
-                let rows = try Wire.decode([ReviewSummary].self, await self.api.get("/reviews"))
+                let rows = try Wire.decode([ReviewSummary].self, await self.observedAPI.get("/reviews"))
                 try self.store?.save("list.json", value: rows)
                 self.rows = rows
                 self.cached = false
+            }
+        }
+    }
+    func checkConnection() async {
+        await operation {
+            self.connection = .checking
+            let data = try await self.observedAPI.get("/config")
+            do {
+                let config = try Wire.decode(ServerConfig.self, data)
+                guard config.modes.contains("mcp") else { throw URLError(.badServerResponse) }
+            } catch {
+                self.connection = .unavailable
+                throw APIError(status: 0, message: "连接到的服务未返回有效工作台配置，请核对电脑上的服务。")
             }
         }
     }
@@ -79,7 +96,7 @@ enum Page: Equatable { case home, create, detail, source, export }
             self.page = .detail
             self.answers = try self.store?.answers(id) ?? [:]
             self.cached = true
-            try self.show(Wire.decode(ReviewSnapshot.self, await self.api.get("/reviews/\(id)")))
+            try self.show(Wire.decode(ReviewSnapshot.self, await self.observedAPI.get("/reviews/\(id)")))
         }
     }
     private func show(_ value: ReviewSnapshot) throws {
@@ -147,12 +164,14 @@ enum Page: Equatable { case home, create, detail, source, export }
     func retry() async { await operation { try await self.send(nil) } }
     private func send(_ candidate: PendingCommand?) async throws {
         guard let journal, let action = journal.pending ?? candidate else { return }
-        let result = try await journal.send(candidate)
-        if action.kind == "create" {
-            try store?.save("draft.json", value: ReviewInput())
-            draft = ReviewInput()
-        } else if let id = action.reviewID { try store?.saveAnswers(id, [:]) }
-        try show(result)
+        _ = try await journal.send(candidate) { result in
+            try self.store?.save("review.json", value: result)
+            if action.kind == "create" {
+                try self.store?.save("draft.json", value: ReviewInput())
+                self.draft = ReviewInput()
+            } else if let id = action.reviewID { try self.store?.saveAnswers(id, [:]) }
+            try self.show(result)
+        }
     }
     func openSource(_ citation: Citation) {
         guard !busy, let value = review?.sources[citation.sourceID] else { return }
@@ -161,7 +180,7 @@ enum Page: Equatable { case home, create, detail, source, export }
     func export() async {
         guard let id = review?.id else { return }
         await operation {
-            let data = try await self.api.get("/reviews/\(id)/export?format=markdown")
+            let data = try await self.observedAPI.get("/reviews/\(id)/export?format=markdown")
             guard let text = String(data: data, encoding: .utf8) else { throw URLError(.cannotDecodeContentData) }
             self.exported = text; self.page = .export
         }

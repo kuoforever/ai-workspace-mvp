@@ -1,6 +1,9 @@
 package io.github.kuoforever.aiworkspace
 
 import android.content.Intent
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -20,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -51,6 +56,7 @@ class MainActivity : ComponentActivity() {
 private fun Workspace(vm: WorkspaceViewModel) {
     val state = vm.ui
     val context = LocalContext.current
+    var connectionHelp by rememberSaveable { mutableStateOf(false) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(vm, lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -63,7 +69,14 @@ private fun Workspace(vm: WorkspaceViewModel) {
         }
     }
     BackHandler(state.page != Page.HOME) { vm.back() }
+    if (connectionHelp) AlertDialog(
+        onDismissRequest = { connectionHelp = false },
+        title = { Text("连接电脑工作台") },
+        text = { SelectionContainer { Text("1. 在电脑启动 AI Workspace 后端。\n2. 连接 USB 调试设备或模拟器，在电脑执行 adb reverse tcp:8765 tcp:8765。\n3. 回到应用检查连接，再刷新记录。\n\n当前地址：http://127.0.0.1:8765\n连接成功表示后端可用；评审仍需电脑上的 MCP 助手处理。") } },
+        confirmButton = { TextButton(onClick = { connectionHelp = false }) { Text("知道了") } },
+    )
     Scaffold(
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         topBar = { TopAppBar(
             title = { Column {
                 Text("AI Workspace", fontWeight = FontWeight.Bold)
@@ -77,10 +90,22 @@ private fun Workspace(vm: WorkspaceViewModel) {
     ) { inset ->
         Column(Modifier.fillMaxSize().padding(inset).imePadding()) {
             if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("busy"))
+            Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                Text(state.connection.label, style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.weight(1f).testTag("connection-status"))
+                TextButton(onClick = vm::checkConnection, enabled = !state.busy && state.startupError == null,
+                    modifier = Modifier.testTag("check-connection")) { Text("检查连接") }
+                TextButton(onClick = { connectionHelp = true }) { Text("帮助") }
+            }
+            if (state.startupError != null) {
+                Text(state.startupError, modifier = Modifier.padding(20.dp).testTag("startup-error"))
+                Button(onClick = vm::reloadLocalData, modifier = Modifier.padding(horizontal = 20.dp).testTag("reload-local")) { Text("重新读取本机记录") }
+                return@Column
+            }
             if (state.error != null) Notice(state.error, error = true)
             if (state.pending != null) {
                 Notice("上次提交结果尚未确认。重试会沿用原请求，输入暂时锁定。")
-                Button(onClick = vm::retry, enabled = !state.busy, modifier = Modifier.padding(horizontal = 20.dp)) { Text("重试原提交") }
+                Button(onClick = vm::retry, enabled = !state.busy, modifier = Modifier.padding(horizontal = 20.dp).testTag("retry-command")) { Text("重试原提交") }
             }
             when (state.page) {
                 Page.HOME -> Home(state, vm)
@@ -118,13 +143,13 @@ private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel) {
             Spacer(Modifier.height(8.dp))
             Text(if (state.cached) "显示本机缓存 · 联网后刷新" else "与电脑工作台共享评审记录", style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(18.dp))
-            Button(onClick = vm::createPage, enabled = !state.busy && state.pending == null, modifier = Modifier.fillMaxWidth()) { Text("新建设计评审") }
+            Button(onClick = vm::createPage, enabled = state.editable, modifier = Modifier.fillMaxWidth().testTag("new-review")) { Text("新建设计评审") }
         }
         if (state.rows.isEmpty()) item {
             Text("还没有评审。先创建一份设计，或在电脑上提交后刷新。", style = MaterialTheme.typography.bodyMedium)
         }
         items(state.rows, key = { it.id }) { row ->
-            OutlinedCard(onClick = { vm.open(row.id) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth()) {
+            OutlinedCard(onClick = { vm.open(row.id) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth().testTag("review:${row.id}")) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(row.title, fontWeight = FontWeight.SemiBold)
                     Text("${statusLabel(row.status)} · ${if (row.mode == "scripted") "离线模拟" else "助手评审"}",
@@ -141,7 +166,7 @@ private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel) {
 private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel) {
     var picker by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
-    val enabled = !state.busy && state.pending == null
+    val enabled = state.editable
     if (picker) AlertDialog(
         onDismissRequest = { picker = false },
         title = { Text("选择检查 · ${state.draft.checkIds.size}/8") },
@@ -162,7 +187,7 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel) {
     LazyColumn(Modifier.testTag("create-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item {
             Text("描述你的设计", style = MaterialTheme.typography.headlineSmall)
-            TextButton(onClick = vm::example, enabled = enabled) { Text("填入演示示例") }
+            TextButton(onClick = vm::example, enabled = enabled, modifier = Modifier.testTag("fill-example")) { Text("填入演示示例") }
         }
         item { OutlinedTextField(state.draft.title, { if (it.length <= 120) vm.edit(state.draft.copy(title = it)) },
             enabled = enabled, label = { Text("评审名称") }, modifier = Modifier.fillMaxWidth().testTag("title"), singleLine = true) }
@@ -192,7 +217,9 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel) {
 @Composable
 private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel) {
     val review = state.review ?: return
-    val enabled = !state.busy && state.pending == null
+    val enabled = state.editable
+    val context = LocalContext.current
+    var copied by remember(review.id) { mutableStateOf(false) }
     LazyColumn(Modifier.testTag("detail-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item {
             Text(statusLabel(review.status), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.testTag("status"))
@@ -201,7 +228,16 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel) {
             if (state.cached) Text("缓存快照 · 刷新以核对最新状态", color = MaterialTheme.colorScheme.error)
             if (review.input.mode == "scripted") Text("离线模拟 · 未经模型评审", color = MaterialTheme.colorScheme.secondary)
         }
-        if (review.status == "waiting_model") item { Text("材料已保存。请让电脑中的助手处理此评审，返回结果后这里会自动更新。") }
+        if (review.status == "waiting_model") item {
+            Text(if (state.cached) "这是上次保存的等待状态，请先恢复连接并刷新。"
+                else "材料已保存，等待电脑助手接手。将下面的指令发送给已连接 MCP 的助手；结果返回后，此页面会自动更新。")
+            TextButton(onClick = {
+                (context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
+                    .setPrimaryClip(ClipData.newPlainText("评审指令", assistantPrompt(review.id)))
+                copied = true
+            }, modifier = Modifier.testTag("copy-assistant-prompt")) { Text(if (copied) "指令已复制" else "复制助手指令") }
+        }
+        if (review.status == "running") item { Text("工作台正在保存或处理本次操作，完成后页面会自动更新。") }
         if (review.error != null) item { Text(review.error, color = MaterialTheme.colorScheme.error) }
         if (review.status == "waiting_input") {
             items(review.questions, key = { "question:${it.id}" }) { question ->

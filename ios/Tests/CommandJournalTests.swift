@@ -103,4 +103,18 @@ import XCTest
         XCTAssertThrowsError(try CommandJournal(store: store, api: api))
         XCTAssertTrue(api.calls.isEmpty)
     }
+    func testFailedResponsePersistenceKeepsOriginalRequest() async throws {
+        let store = MemoryStore()
+        let result = response
+        let api = FakeAPI { _, _, _ in result }
+        let journal = try CommandJournal(store: store, api: api)
+        do {
+            _ = try await journal.send(command) { _ in throw CocoaError(.fileWriteOutOfSpace) }
+            XCTFail("Local persistence must finish before acknowledging the command")
+        } catch is CocoaError { }
+        XCTAssertEqual(journal.pending, command)
+        _ = try await journal.send()
+        XCTAssertEqual(api.calls[0], api.calls[1])
+        XCTAssertNil(store.value)
+    }
 }

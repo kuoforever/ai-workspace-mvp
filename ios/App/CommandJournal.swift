@@ -11,7 +11,7 @@ import Foundation
         self.api = api
         pending = try store.pending() // Corruption is not treated as an empty journal.
     }
-    func send(_ candidate: PendingCommand? = nil) async throws -> ReviewSnapshot {
+    func send(_ candidate: PendingCommand? = nil, accept: (ReviewSnapshot) throws -> Void = { _ in }) async throws -> ReviewSnapshot {
         guard !sending else { throw APIError(status: 0, message: "正在确认上次提交。") }
         guard pending == nil || candidate == nil || pending == candidate else {
             throw APIError(status: 0, message: "请先重试尚未确认的原提交。")
@@ -33,6 +33,8 @@ import Foundation
             throw error
         }
         let review = try Wire.decode(ReviewSnapshot.self, response)
+        // The local response must be saved before its retry identity is cleared.
+        try accept(review)
         // Unknown outcomes, cancellation and invalid responses keep the exact command.
         try store.savePending(nil)
         pending = nil

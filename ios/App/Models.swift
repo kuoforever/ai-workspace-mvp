@@ -2,6 +2,10 @@ import Foundation
 
 struct CheckCard: Codable, Identifiable { let id: String; let question: String }
 struct Catalog: Decodable { let checks: [CheckCard] }
+struct ServerConfig: Decodable { let modes: [String] }
+func assistantPrompt(_ id: String) -> String {
+    "请通过 swe-workspace 读取评审 \(id) 的最新上下文，按选定检查项继续评审。需要澄清时提交问题；材料充分时提交带原文引用的报告。"
+}
 struct ReviewSummary: Codable, Identifiable {
     let id: String
     let title: String
@@ -60,7 +64,7 @@ struct PendingCommand: Codable, Equatable {
 
 func statusLabel(_ value: String) -> String {
     ["waiting_model": "等待助手", "waiting_input": "等待补充", "completed": "已完成",
-     "running": "保存中", "failed": "失败", "interrupted": "已中断"][value] ?? value
+     "running": "正在处理", "failed": "失败", "interrupted": "已中断"][value] ?? value
 }
 func verdictLabel(_ value: String) -> String {
     ["supported": "有材料支持", "risk": "存在风险", "unknown": "信息不足",

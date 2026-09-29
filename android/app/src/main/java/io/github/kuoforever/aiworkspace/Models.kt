@@ -8,6 +8,13 @@ val wireJson = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
 @Serializable data class CheckCard(val id: String, val question: String)
 @Serializable data class Catalog(val checks: List<CheckCard>)
+@Serializable data class ServerConfig(val modes: List<String>)
+enum class Connection(val label: String) {
+    UNKNOWN("尚未检查连接"), CHECKING("正在检查连接"), CONNECTED("工作台已连接"),
+    OFFLINE("工作台未连接"), UNAVAILABLE("工作台暂不可用"),
+}
+
+fun assistantPrompt(id: String) = "请通过 swe-workspace 读取评审 $id 的最新上下文，按选定检查项继续评审。需要澄清时提交问题；材料充分时提交带原文引用的报告。"
 @Serializable data class ReviewSummary(
     val id: String, val title: String, val status: String, val mode: String,
 )
@@ -43,7 +50,7 @@ fun statusLabel(status: String) = when (status) {
     "waiting_model" -> "等待助手"
     "waiting_input" -> "等待补充"
     "completed" -> "已完成"
-    "running" -> "保存中"
+    "running" -> "正在处理"
     "failed" -> "失败"
     "interrupted" -> "已中断"
     else -> status

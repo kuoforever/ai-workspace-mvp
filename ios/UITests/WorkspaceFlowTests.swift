@@ -103,6 +103,8 @@ final class WorkspaceFlowTests: XCTestCase {
         XCTAssertEqual((saved["answers"] as? [String: String])?["q1"], answer)
     }
     func testDesktopCreatedMCPReviewContinuesOnPhone() throws {
+        tap(app.buttons["check-connection"])
+        XCTAssertEqual(app.staticTexts["connection-status"].label, "工作台已连接")
         let title = "iOS cross-device " + String(UUID().uuidString.prefix(8))
         let created = try object("/reviews", body: ["title": title,
             "design": "订单使用请求键去重，但保留时间尚未明确。", "mode": "mcp",
@@ -120,6 +122,8 @@ final class WorkspaceFlowTests: XCTestCase {
         dismissKeyboard()
         tap(app.buttons["answer-submit"])
         waitStatus("等待助手")
+        tap(app.buttons["copy-assistant-prompt"])
+        XCTAssertTrue(app.buttons["copy-assistant-prompt"].label.contains("指令已复制"))
         let latest = try object("/reviews/" + id)
         XCTAssertEqual((latest["answers"] as? [String: String])?["cross-device"], "Seven days, then verify the business intent again.")
         let updatedContext = try object("/reviews/" + id + "/context")

@@ -9,6 +9,7 @@ import java.io.IOException
 import java.net.URLEncoder
 import java.util.UUID
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.encodeToString
 
 enum class Page { HOME, CREATE, DETAIL, SOURCE, EXPORT }
@@ -28,23 +29,53 @@ data class WorkspaceUi(
     val cached: Boolean = true,
     val error: String? = null,
     val pending: PendingCommand? = null,
-)
+    val startupError: String? = null,
+    val connection: Connection = Connection.UNKNOWN,
+) { val editable: Boolean get() = !busy && pending == null && startupError == null }
 
-class WorkspaceViewModel(private val api: WorkspaceApi, private val store: DeviceStore) : ViewModel() {
-    private val journal = CommandJournal(store, api)
-    var ui by mutableStateOf(WorkspaceUi(
-        rows = store.cachedList(), draft = store.draft(), review = store.cachedReview(),
-        pending = journal.pending,
-    ))
+class WorkspaceViewModel(private val api: WorkspaceApi, private val store: WorkspaceStore) : ViewModel() {
+    private var journal: CommandJournal? = null
+    private val observedApi = object : WorkspaceApi {
+        override suspend fun request(path: String, body: String?, key: String?): String {
+            try {
+                val result = api.request(path, body, key)
+                ui = ui.copy(connection = Connection.CONNECTED)
+                return result
+            } catch (failure: ApiFailure) {
+                ui = ui.copy(connection = if (failure.status >= 500) Connection.UNAVAILABLE else Connection.CONNECTED)
+                throw failure
+            } catch (failure: IOException) {
+                ui = ui.copy(connection = Connection.OFFLINE)
+                throw failure
+            }
+        }
+    }
+    var ui by mutableStateOf(WorkspaceUi())
         private set
 
-    init { refresh() }
+    init { reloadLocalData() }
+
+    fun reloadLocalData() {
+        if (ui.busy) return
+        try {
+            val restored = CommandJournal(store, observedApi)
+            val state = WorkspaceUi(rows = store.cachedList(), draft = store.draft(),
+                review = store.cachedReview(), pending = restored.pending)
+            journal = restored
+            ui = state
+            refresh()
+        } catch (_: Exception) {
+            ui = ui.copy(startupError = "本机记录无法读取，写入已暂停。请保留应用数据，修复存储问题后重新读取。")
+        }
+    }
 
     private fun operation(block: suspend () -> Unit) {
-        if (ui.busy) return
+        if (ui.busy || ui.startupError != null) return
         ui = ui.copy(busy = true, error = null)
         viewModelScope.launch {
             try { block() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: LocalDataFailure) { ui = ui.copy(error = "本机记录未能保存。输入和原提交已保留，请检查设备存储后重试。") }
             catch (failure: ApiFailure) {
                 ui = ui.copy(error = if (failure.status == 409)
                     "${failure.message}。输入草稿已保留，请刷新核对后再提交。"
@@ -53,24 +84,36 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Devic
                 ui = ui.copy(cached = true, error = "未能连接工作台。请确认电脑服务与设备转发已启动；草稿仍保存在本机。")
             } catch (failure: Exception) {
                 ui = ui.copy(error = failure.message ?: "暂时无法完成，请稍后重试。")
-            } finally { ui = ui.copy(busy = false, pending = journal.pending) }
+            } finally { ui = ui.copy(busy = false, pending = journal?.pending) }
         }
     }
 
     fun refresh() = operation {
         if (ui.checks.isEmpty()) {
-            ui = ui.copy(checks = wireJson.decodeFromString<Catalog>(api.request("/catalog")).checks)
+            ui = ui.copy(checks = wireJson.decodeFromString<Catalog>(observedApi.request("/catalog")).checks)
         }
         if (ui.page == Page.DETAIL && ui.selectedId != null) {
-            show(wireJson.decodeFromString(api.request("/reviews/${segment(ui.selectedId!!)}")))
+            show(wireJson.decodeFromString(observedApi.request("/reviews/${segment(ui.selectedId!!)}")))
         } else {
-            val rows = wireJson.decodeFromString<List<ReviewSummary>>(api.request("/reviews"))
+            val rows = wireJson.decodeFromString<List<ReviewSummary>>(observedApi.request("/reviews"))
             store.saveList(rows)
             ui = ui.copy(rows = rows, cached = false)
         }
     }
 
-    fun createPage() { if (!ui.busy) ui = ui.copy(page = Page.CREATE, error = null) }
+    fun checkConnection() = operation {
+        ui = ui.copy(connection = Connection.CHECKING)
+        val response = observedApi.request("/config")
+        try {
+            val config = wireJson.decodeFromString<ServerConfig>(response)
+            check("mcp" in config.modes)
+        } catch (_: Exception) {
+            ui = ui.copy(connection = Connection.UNAVAILABLE)
+            error("连接到的服务未返回有效工作台配置，请核对电脑上的服务。")
+        }
+    }
+
+    fun createPage() { if (ui.editable) ui = ui.copy(page = Page.CREATE, error = null) }
     fun back() {
         if (ui.busy) return
         ui = ui.copy(page = if (ui.page in listOf(Page.SOURCE, Page.EXPORT)) Page.DETAIL else Page.HOME)
@@ -78,9 +121,9 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Devic
     }
 
     fun edit(draft: ReviewInput) {
-        if (ui.pending != null || ui.busy) return
-        store.saveDraft(draft)
-        ui = ui.copy(draft = draft)
+        if (!ui.editable) return
+        try { store.saveDraft(draft); ui = ui.copy(draft = draft) }
+        catch (_: LocalDataFailure) { ui = ui.copy(draft = draft, error = "草稿未能保存到设备，请检查存储空间；当前输入仍保留在页面。") }
     }
 
     fun example() = edit(ReviewInput(
@@ -105,11 +148,11 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Devic
     }
 
     fun editAnswer(id: String, text: String) {
-        if (ui.pending != null || ui.busy || text.length > 2000) return
+        if (!ui.editable || text.length > 2000) return
         val reviewId = ui.selectedId ?: return
         val answers = ui.answers + (id to text)
-        store.saveAnswers(reviewId, answers)
-        ui = ui.copy(answers = answers)
+        try { store.saveAnswers(reviewId, answers); ui = ui.copy(answers = answers) }
+        catch (_: LocalDataFailure) { ui = ui.copy(answers = answers, error = "回答未能保存到设备，请检查存储空间；当前输入仍保留在页面。") }
     }
 
     fun answer() {
@@ -128,21 +171,28 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Devic
     fun retry() = send(null)
 
     private fun send(command: PendingCommand?) = operation {
+        val journal = requireNotNull(journal)
         val action = journal.pending ?: requireNotNull(command)
-        val review = journal.send(command)
-        if (action.kind == "create") {
-            store.saveDraft(ReviewInput())
-            ui = ui.copy(draft = ReviewInput())
-        } else if (action.reviewId != null) store.saveAnswers(action.reviewId, emptyMap())
-        show(review)
+        journal.send(command) { review ->
+            store.saveReview(review)
+            if (action.kind == "create") {
+                store.saveDraft(ReviewInput())
+                ui = ui.copy(draft = ReviewInput())
+            } else if (action.reviewId != null) store.saveAnswers(action.reviewId, emptyMap())
+            show(review)
+        }
     }
 
     fun open(id: String) {
         if (ui.busy) return
-        val cached = store.cachedReview()?.takeIf { it.id == id }
-        ui = ui.copy(page = Page.DETAIL, selectedId = id, review = cached,
-            answers = store.answers(id), cached = cached != null)
-        refresh()
+        try {
+            val cached = store.cachedReview()?.takeIf { it.id == id }
+            ui = ui.copy(page = Page.DETAIL, selectedId = id, review = cached,
+                answers = store.answers(id), cached = cached != null)
+            refresh()
+        } catch (_: LocalDataFailure) {
+            ui = ui.copy(error = "本机回答或缓存无法读取，请保留应用数据后重试。")
+        }
     }
 
     private fun show(review: ReviewSnapshot) {
@@ -158,7 +208,7 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Devic
 
     fun export() = operation {
         val id = ui.selectedId ?: return@operation
-        val text = api.request("/reviews/${segment(id)}/export?format=markdown")
+        val text = observedApi.request("/reviews/${segment(id)}/export?format=markdown")
         ui = ui.copy(page = Page.EXPORT, exported = text)
     }
 

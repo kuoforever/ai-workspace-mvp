@@ -13,6 +13,32 @@ extension WorkspaceAPI {
     func get(_ path: String) async throws -> Data { try await request(path, body: nil, key: nil) }
 }
 
+enum ConnectionState: String {
+    case unknown = "尚未检查连接", checking = "正在检查连接", connected = "工作台已连接"
+    case offline = "工作台未连接", unavailable = "工作台暂不可用"
+}
+
+@MainActor final class ObservedWorkspaceAPI: WorkspaceAPI {
+    private let base: WorkspaceAPI
+    private let update: (ConnectionState) -> Void
+    init(base: WorkspaceAPI, update: @escaping (ConnectionState) -> Void) {
+        self.base = base; self.update = update
+    }
+    func request(_ path: String, body: Data?, key: String?) async throws -> Data {
+        do {
+            let result = try await base.request(path, body: body, key: key)
+            update(.connected)
+            return result
+        } catch let failure as APIError {
+            update(failure.status >= 500 ? .unavailable : .connected)
+            throw failure
+        } catch let failure as URLError {
+            if failure.code != .cancelled { update(.offline) }
+            throw failure
+        }
+    }
+}
+
 final class NoRedirects: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask,
                     willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest,

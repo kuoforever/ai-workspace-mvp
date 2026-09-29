@@ -7,7 +7,7 @@ class CommandJournal(private val store: CommandStore, private val api: Workspace
     var pending: PendingCommand? = store.pending()
         private set
 
-    suspend fun send(candidate: PendingCommand? = null): ReviewSnapshot {
+    suspend fun send(candidate: PendingCommand? = null, accept: (ReviewSnapshot) -> Unit = {}): ReviewSnapshot {
         check(pending == null || candidate == null || candidate == pending) {
             "上次提交结果尚未确认，请先重试原提交。"
         }
@@ -25,6 +25,8 @@ class CommandJournal(private val store: CommandStore, private val api: Workspace
             throw failure
         }
         val review = wireJson.decodeFromString<ReviewSnapshot>(response)
+        // Keep the request until both the response and its local state are saved.
+        accept(review)
         // Invalid/truncated responses and I/O failures retain exactly the same request for retry.
         withContext(Dispatchers.IO) { store.savePending(null) }
         pending = null
