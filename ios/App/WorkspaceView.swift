@@ -153,6 +153,8 @@ import SwiftUI
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var choosing = false
     @State private var query = ""
+    private enum Field { case title, design }
+    @FocusState private var focusedField: Field?
     private func binding<T>(_ key: WritableKeyPath<ReviewInput, T>) -> Binding<T> {
         Binding(get: { model.draft[keyPath: key] }, set: { value in
             var next = model.draft; next[keyPath: key] = value; model.edit(next)
@@ -163,8 +165,10 @@ import SwiftUI
             Section { status }
             Section("描述你的设计") {
                 Button("填入演示示例") { model.example() }
-                TextField("评审名称", text: binding(\.title)).accessibilityIdentifier("review-title")
-                TextEditor(text: binding(\.design)).frame(minHeight: 150).accessibilityIdentifier("design")
+                TextField("评审名称", text: binding(\.title)).focused($focusedField, equals: .title)
+                    .accessibilityIdentifier("review-title")
+                TextEditor(text: binding(\.design)).focused($focusedField, equals: .design)
+                    .frame(minHeight: 150).accessibilityIdentifier("design")
                 Text("\(model.draft.design.unicodeScalars.count)/8000 字符 · 草稿保存在设备").font(.caption).foregroundStyle(.secondary)
             }.disabled(!model.editable)
             Section("检查范围 · \(model.draft.checkIDs.count)/8") {
@@ -181,14 +185,20 @@ import SwiftUI
                 Text(model.draft.mode == "mcp" ? "提交后，让电脑中连接 MCP 的助手处理。手机可继续回答和查看结果。" : "固定程序展示流程，本次不调用模型。")
                     .font(.footnote).foregroundStyle(.secondary)
             }.disabled(!model.editable)
-            Section {
-                Button { Task { await model.create() } } label: {
-                    Text("提交评审").frame(maxWidth: .infinity)
-                }.buttonStyle(.borderedProminent).tint(.workspaceButton).accessibilityIdentifier("submit")
-            }.disabled(!model.editable)
         }
         .accessibilityIdentifier("create-form")
         .scrollDismissesKeyboard(.interactively)
+        .safeAreaInset(edge: .bottom) {
+            if focusedField == nil {
+                Button { Task { await model.create() } } label: {
+                    Text("提交评审").fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }.buttonStyle(.borderedProminent).tint(.workspaceButton)
+                    .disabled(!model.editable).accessibilityIdentifier("submit")
+                    .padding(.horizontal, 20).padding(.vertical, 8)
+                    .background(Color(uiColor: .systemGroupedBackground))
+            }
+        }
         .sheet(isPresented: $choosing) {
             NavigationStack {
                 List(model.checks.filter { query.isEmpty || ($0.id + $0.question).localizedCaseInsensitiveContains(query) }) { check in
