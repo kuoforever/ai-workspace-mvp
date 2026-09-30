@@ -173,7 +173,8 @@ import SwiftUI
             }.disabled(!model.editable)
             Section {
                 if textSize.isAccessibilitySize {
-                    modePicker.pickerStyle(.inline)
+                    modeOption("助手评审", value: "mcp")
+                    modeOption("离线模拟", value: "scripted")
                 } else {
                     modePicker.pickerStyle(.segmented)
                 }
@@ -209,6 +210,20 @@ import SwiftUI
             Text("助手评审").tag("mcp")
             Text("离线模拟").tag("scripted")
         }
+    }
+    private func modeOption(_ title: String, value: String) -> some View {
+        Button {
+            var next = model.draft
+            next.mode = value
+            model.edit(next)
+        } label: {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: model.draft.mode == value ? "checkmark.circle.fill" : "circle")
+                Text(title).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }.frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        }.buttonStyle(.plain).accessibilityLabel(title)
+            .accessibilityValue(model.draft.mode == value ? "已选择" : "未选择")
     }
 }
 
