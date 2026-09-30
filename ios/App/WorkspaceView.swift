@@ -153,6 +153,7 @@ import SwiftUI
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var choosing = false
     @State private var query = ""
+    @State private var keyboardVisible = false
     private enum Field { case title, design }
     @FocusState private var focusedField: Field?
     private func binding<T>(_ key: WritableKeyPath<ReviewInput, T>) -> Binding<T> {
@@ -173,7 +174,7 @@ import SwiftUI
             }.disabled(!model.editable)
             Section("检查范围 · \(model.draft.checkIDs.count)/8") {
                 Text(model.draft.checkIDs.joined(separator: " · ")).font(.subheadline)
-                Button("调整检查项") { choosing = true }.disabled(model.checks.isEmpty)
+                Button("调整检查项") { focusedField = nil; choosing = true }.disabled(model.checks.isEmpty)
             }.disabled(!model.editable)
             Section {
                 if textSize.isAccessibilitySize {
@@ -188,8 +189,15 @@ import SwiftUI
         }
         .accessibilityIdentifier("create-form")
         .scrollDismissesKeyboard(.interactively)
+        .onChange(of: model.draft.mode) { _, _ in focusedField = nil }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            keyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            keyboardVisible = false
+        }
         .safeAreaInset(edge: .bottom) {
-            if focusedField == nil {
+            if !keyboardVisible {
                 Button { Task { await model.create() } } label: {
                     Text("提交评审").fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, minHeight: 44)

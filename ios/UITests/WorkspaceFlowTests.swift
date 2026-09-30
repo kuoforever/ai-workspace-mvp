@@ -139,6 +139,7 @@ final class WorkspaceFlowTests: XCTestCase {
         tap(app.buttons["new-review"])
         XCTAssertEqual(app.textFields["review-title"].value as? String, title)
         tap(app.buttons["离线模拟"])
+        dismissKeyboard()
         tap(app.buttons["submit"])
         waitStatus("等待补充")
         shot("01-clarification")
