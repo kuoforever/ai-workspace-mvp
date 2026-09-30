@@ -18,21 +18,45 @@ final class WorkspaceFlowTests: XCTestCase {
         expectation(for: predicate, evaluatedWith: field)
         waitForExpectations(timeout: 30)
     }
+    private func scrollPage(up: Bool) {
+        // Drag the page gutter so a multiline editor cannot consume a gesture
+        // intended to reveal the next form section.
+        let form = app.descendants(matching: .any).matching(identifier: "create-form").firstMatch
+        let scroll = form.exists ? form : app.scrollViews.firstMatch
+        var frame = scroll.exists ? scroll.frame.intersection(app.frame) : app.frame
+        if frame.width < 40 || frame.height < 40 { frame = app.frame }
+        let navigation = app.navigationBars.firstMatch
+        let top = max(frame.minY, navigation.exists ? navigation.frame.maxY : frame.minY)
+        var bottom = frame.maxY
+        let submit = app.buttons["submit"]
+        if submit.exists { bottom = min(bottom, submit.frame.minY) }
+        let keyboard = app.keyboards.firstMatch
+        if keyboard.exists { bottom = min(bottom, keyboard.frame.minY) }
+        let height = bottom - top
+        guard height > 40 else { if up { app.swipeUp() } else { app.swipeDown() }; return }
+        let origin = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        let x = frame.maxX - 5 - app.frame.minX
+        let high = top + height * 0.15 - app.frame.minY
+        let low = bottom - height * 0.15 - app.frame.minY
+        let start = origin.withOffset(CGVector(dx: x, dy: up ? low : high))
+        let end = origin.withOffset(CGVector(dx: x, dy: up ? high : low))
+        start.press(forDuration: 0.05, thenDragTo: end)
+    }
     private func tap(_ element: XCUIElement) {
         for _ in 0..<6 {
             if element.exists && element.isHittable { break }
-            app.swipeDown()
+            scrollPage(up: false)
         }
         for _ in 0..<16 {
             if element.exists && element.isHittable { break }
-            app.swipeUp()
+            scrollPage(up: true)
         }
         XCTAssertTrue(element.waitForExistence(timeout: 15))
         let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: element)
         XCTAssertEqual(XCTWaiter.wait(for: [enabled], timeout: 20), .completed)
         for _ in 0..<8 {
             if element.isHittable { break }
-            app.swipeUp()
+            scrollPage(up: true)
         }
         XCTAssertTrue(element.isHittable)
         element.tap()

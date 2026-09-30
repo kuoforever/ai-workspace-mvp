@@ -32,6 +32,9 @@ finish_recording
 trap - EXIT
 tail -100 ios-evidence/tests.log
 xcrun xcresulttool get test-results summary --path ios-evidence/Tests.xcresult >ios-evidence/test-summary.json
+if [ "$test_exit" -ne 0 ]; then
+  .venv/bin/python -c 'import json; print(json.dumps(json.load(open("ios-evidence/test-summary.json"))["testFailures"], ensure_ascii=False))'
+fi
 xcrun xcresulttool export attachments --path ios-evidence/Tests.xcresult --output-path ios-evidence/screenshots
 if [ "$test_exit" -eq 0 ]; then
   test -s ios-evidence/AIWorkspace-simulator.app.zip
@@ -66,6 +69,9 @@ for profile in compact tablet; do
     CODE_SIGNING_ALLOWED=NO >"ios-evidence/layout-$profile.log" 2>&1 || layout_exit=$?
   tail -60 "ios-evidence/layout-$profile.log"
   xcrun xcresulttool get test-results summary --path "ios-evidence/Layout-$profile.xcresult" >"ios-evidence/layout-$profile-summary.json"
+  if [ "$layout_exit" -ne 0 ]; then
+    .venv/bin/python -c 'import json,sys; print(json.dumps(json.load(open(sys.argv[1]))["testFailures"], ensure_ascii=False))' "ios-evidence/layout-$profile-summary.json"
+  fi
   xcrun xcresulttool export attachments --path "ios-evidence/Layout-$profile.xcresult" --output-path "ios-evidence/layout-$profile-screenshots"
   xcrun simctl ui "$layout_id" content_size "$old_content_size"
   xcrun simctl ui "$layout_id" appearance "$old_appearance"
