@@ -62,4 +62,6 @@ bash scripts/ios-simulator-check.sh
 
 脚本另在 iPhone SE（第三代）和 iPad 模拟器上启用深色模式与最大辅助功能字体，检查键盘输入、旋转后的草稿、可操作的提交按钮与平板报告宽度。每个设备单独保存测试结果和截图。真机和不同系统版本的兼容性仍需设备验证。
 
+[界面适配结果与截图](../evidence/mobile/adaptation/README.md)
+
 [测试结果与截图](../evidence/ios/README.md) · [来源与依赖](../ATTRIBUTION.md)

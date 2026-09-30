@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "model_inference": false,
+  "review_id": "4ad060a8-69b9-4c01-82ce-b66c152fc987",
+  "checks": [
+    "draft_process_restart",
+    "offline_command_process_restart",
+    "connection_check_is_read_only",
+    "single_record_after_retry",
+    "answer_process_restart",
+    "corrupt_journal_recovery"
+  ],
+  "restarts": [
+    {
+      "before_pid": "4883",
+      "after_pid": "5182"
+    },
+    {
+      "before_pid": "5182",
+      "after_pid": "5485"
+    },
+    {
+      "before_pid": "5485",
+      "after_pid": "5715"
+    },
+    {
+      "before_pid": "",
+      "after_pid": "5863"
+    }
+  ],
+  "request_key": "ef0fa847-3292-47ce-9691-672e50b9beb8"
+}

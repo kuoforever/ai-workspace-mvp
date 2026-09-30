@@ -60,4 +60,6 @@ CI 还从应用进程外执行 `scripts/android-process-check.py`，验证强制
 
 界面适配测试在隔离模拟器中切换到 360 dp 宽度、两倍系统字体和深色模式，检查输入、横屏草稿保留、提交与宽窗口阅读宽度。测试结束后恢复系统设置；不会在真机执行窗口覆盖操作。
 
+[界面适配结果与截图](../evidence/mobile/adaptation/README.md)
+
 [测试结果与截图](../evidence/android/README.md) · [来源与依赖](../ATTRIBUTION.md)

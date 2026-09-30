@@ -1,0 +1,175 @@
+{
+  "recorded_at": "2026-09-30T03:26:18.100306+00:00",
+  "model_inference": false,
+  "android": {
+    "run": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36658408928",
+    "code_commit": "5a4c8df02e243e1c0d8081120ce659af5d899dd4",
+    "unit_tests": 9,
+    "ui_tests": 3,
+    "process_checks": [
+      "draft_process_restart",
+      "offline_command_process_restart",
+      "connection_check_is_read_only",
+      "single_record_after_retry",
+      "answer_process_restart",
+      "corrupt_journal_recovery"
+    ],
+    "profile": {
+      "api": 35,
+      "compact_width_dp": 360,
+      "font_scale": 2,
+      "appearance": "dark",
+      "wide_size_px": [
+        2732,
+        2048
+      ],
+      "density": 2,
+      "maximum_content_width_dp": 840
+    },
+    "application": {
+      "file": "ai-workspace-android-adapted.apk",
+      "sha256": "41eec8d68d58209b9f2a18ba8b2d12e8cef71c606b34514a2980ae6baca1dc86",
+      "bytes": 9687839
+    }
+  },
+  "screenshots": [
+    {
+      "file": "android-compact-keyboard.png",
+      "sha256": "edc28dbc7a1f94862af89e608c5699d50c8e4fb64d4469380399513f508b095d",
+      "bytes": 65384
+    },
+    {
+      "file": "android-landscape.png",
+      "sha256": "f9091dec61177784958ebe1b605ef09c3e261a929cb8f4189cfbd89ccbc04f1b",
+      "bytes": 87630
+    },
+    {
+      "file": "android-wide.png",
+      "sha256": "429dffa934577a086c020acdfe0b7e789a09903b8a1346b9cbbad30e1d0fc53c",
+      "bytes": 206040
+    },
+    {
+      "file": "ios-compact-keyboard.png",
+      "sha256": "8b5a8daf61390a5100f603ceb7f14d77dd322ef892b23658ab61520ecdc5dc22",
+      "bytes": 347679
+    },
+    {
+      "file": "ios-compact-landscape.png",
+      "sha256": "f7b19c699ee89acfd9eb22786389fc19a73cfad212f13f06a8f12172c1d6692c",
+      "bytes": 71138
+    },
+    {
+      "file": "ios-tablet-keyboard.png",
+      "sha256": "94e8c4812208f4232f07666eb0e2da7c9472e1b197c8b3b28945b21fd0e2d184",
+      "bytes": 633749
+    },
+    {
+      "file": "ios-tablet-landscape.png",
+      "sha256": "f189aa9743ade99888d884bbb65fe998bbc01c8d2c5c4c21edfdd119b784de96",
+      "bytes": 276259
+    }
+  ],
+  "ios": {
+    "run": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36662906207",
+    "code_commit": "3eced8624daecc0476ad23839e6c17f3873886d5",
+    "results": {
+      "iphone16": {
+        "passedTests": 13,
+        "failedTests": 0,
+        "skippedTests": 0,
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "F0E646EF-4792-4F36-B48B-EC89B3A6B73B",
+              "deviceName": "iPhone 16",
+              "modelName": "iPhone 16",
+              "osBuildNumber": "22F77",
+              "osVersion": "18.5",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 0,
+            "passedTests": 13,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ]
+      },
+      "compact": {
+        "passedTests": 1,
+        "failedTests": 0,
+        "skippedTests": 0,
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "FC782112-AE73-48B1-84DF-214A154F2D64",
+              "deviceName": "AI Workspace compact check",
+              "modelName": "iPhone SE (3rd generation)",
+              "osBuildNumber": "22F77",
+              "osVersion": "18.5",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 0,
+            "passedTests": 1,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ]
+      },
+      "tablet": {
+        "passedTests": 1,
+        "failedTests": 0,
+        "skippedTests": 0,
+        "devicesAndConfigurations": [
+          {
+            "device": {
+              "architecture": "arm64",
+              "deviceId": "2EDB2671-090C-4988-822E-421879ECE84C",
+              "deviceName": "iPad Pro 11-inch (M4)",
+              "modelName": "iPad Pro 11-inch (M4)",
+              "osBuildNumber": "22F77",
+              "osVersion": "18.5",
+              "platform": "iOS Simulator"
+            },
+            "expectedFailures": 0,
+            "failedTests": 0,
+            "passedTests": 1,
+            "skippedTests": 0,
+            "testPlanConfiguration": {
+              "configurationId": "1",
+              "configurationName": "Test Scheme Action"
+            }
+          }
+        ]
+      }
+    },
+    "application": {
+      "file": "ai-workspace-ios-adapted-simulator.app.zip",
+      "sha256": "378f6672d8ec40f740491a1b4f59aa27efcde2e2afc708075c4452f1d5179b16",
+      "bytes": 6051094,
+      "version": "0.3.0",
+      "build": "3",
+      "device_families": [
+        1,
+        2
+      ]
+    }
+  },
+  "backend": {
+    "run": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36662906201",
+    "tests_per_platform": 24,
+    "platforms": [
+      "Windows",
+      "Ubuntu"
+    ]
+  }
+}
