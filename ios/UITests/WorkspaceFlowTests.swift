@@ -29,7 +29,7 @@ final class WorkspaceFlowTests: XCTestCase {
         let top = max(frame.minY, navigation.exists ? navigation.frame.maxY : frame.minY)
         var bottom = frame.maxY
         let submit = app.buttons["submit"]
-        if submit.exists { bottom = min(bottom, submit.frame.minY) }
+        if submit.exists && submit.frame.minY > top { bottom = min(bottom, submit.frame.minY) }
         let keyboard = app.keyboards.firstMatch
         if keyboard.exists { bottom = min(bottom, keyboard.frame.minY) }
         let height = bottom - top
