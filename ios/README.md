@@ -42,6 +42,10 @@ MainActor 状态对象管理交互，Codable 文件以原子替换保存草稿�
 
 评审方式见[使用指南](../docs/usage.md)，数据与恢复规则见[架构设计](../docs/architecture.md#移动端恢复)。
 
+## 界面适配
+
+支持 iPhone 与 iPad 模拟器、横竖屏、系统深色模式和 Dynamic Type。正文最大宽度为 840 pt；连接与恢复提示随页面滚动。在辅助功能大字体下，连接操作自动换行，评审方式采用列表选择，避免分段控件挤压文字。
+
 ## 测试
 
 在仓库根目录执行，后端须已启动，且 Xcode 中已安装 iOS 18.5 的 iPhone 16 模拟器：
@@ -53,5 +57,7 @@ bash scripts/ios-simulator-check.sh
 脚本执行 XCTest 和 XCUITest，输出模拟器应用、`.xcresult`、截图和录屏到 `ios-evidence/`。测试覆盖提交恢复、原生评审流程、草稿与回答重启恢复，以及跨端接续。
 
 两端使用同一份[已保存模型报告](../fixtures/mobile-review.json)验证澄清回答与报告接续。样本的真实 MCP 生成记录见[移动端验证](../evidence/mobile/README.md)，模拟器中执行的是回放。
+
+脚本另在 iPhone SE（第三代）和 iPad 模拟器上启用深色模式与最大辅助功能字体，检查键盘输入、旋转后的草稿、可操作的提交按钮与平板报告宽度。每个设备单独保存测试结果和截图。真机和不同系统版本的兼容性仍需设备验证。
 
 [测试结果与截图](../evidence/ios/README.md) · [来源与依赖](../ATTRIBUTION.md)

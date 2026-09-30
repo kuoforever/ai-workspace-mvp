@@ -8,20 +8,8 @@ import SwiftUI
         NavigationStack {
             VStack(spacing: 0) {
                 if model.busy { ProgressView().accessibilityIdentifier("busy").padding(6) }
-                HStack {
-                    Text(model.connection.rawValue).font(.caption).accessibilityIdentifier("connection-status")
-                    Spacer()
-                    Button("检查连接") { Task { await model.checkConnection() } }
-                        .disabled(model.busy || model.startupError != nil).accessibilityIdentifier("check-connection")
-                    Button("帮助") { connectionHelp = true }
-                }.font(.footnote).padding(.horizontal, 20).padding(.vertical, 8)
-                if let message = model.startupError ?? model.error { notice(message, color: .red) }
-                if model.pending != nil {
-                    notice("上次提交结果尚未确认。重试沿用原请求，输入暂时锁定。", color: .workspaceTeal)
-                    Button("重试原提交") { Task { await model.retry() } }
-                        .buttonStyle(.bordered).disabled(model.busy).padding(.bottom, 8)
-                }
-                content
+                content.frame(maxWidth: 840)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
             .background(Color(uiColor: .systemGroupedBackground))
             .navigationTitle("AI Workspace")
@@ -61,41 +49,84 @@ import SwiftUI
             }
         }
     }
+    private var status: WorkspaceStatusView {
+        WorkspaceStatusView(model: model) { connectionHelp = true }
+    }
     @ViewBuilder private var content: some View {
         switch model.page {
-        case .home: HomeView(model: model)
-        case .create: CreateReviewView(model: model)
-        case .detail: ReviewDetailView(model: model)
-        case .source: SourceView(source: model.source, quote: model.quote)
+        case .home: HomeView(model: model, status: status)
+        case .create: CreateReviewView(model: model, status: status)
+        case .detail: ReviewDetailView(model: model, status: status)
+        case .source: SourceView(source: model.source, quote: model.quote, status: status)
         case .export:
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    status
                     Text("导出预览").font(.title2.bold()).accessibilityIdentifier("export-title")
                     ShareLink(item: model.exported) { Label("分享报告", systemImage: "square.and.arrow.up") }
-                        .buttonStyle(.borderedProminent).accessibilityIdentifier("share-report")
+                        .buttonStyle(.borderedProminent).tint(.workspaceButton).accessibilityIdentifier("share-report")
                     Text(verbatim: model.exported).font(.footnote).textSelection(.enabled)
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
             }
         }
     }
+}
+
+@MainActor private struct WorkspaceStatusView: View {
+    @ObservedObject var model: WorkspaceModel
+    let help: () -> Void
+    private var connectionLabel: some View {
+        Text(model.connection.rawValue).font(.caption).accessibilityIdentifier("connection-status")
+    }
+    private var actions: some View {
+        HStack(spacing: 12) {
+            Button { Task { await model.checkConnection() } } label: {
+                Text("检查连接").fixedSize(horizontal: false, vertical: true).frame(minHeight: 44)
+            }.disabled(model.busy || model.startupError != nil).accessibilityIdentifier("check-connection")
+            Button(action: help) { Text("帮助").fixedSize(horizontal: false, vertical: true).frame(minHeight: 44) }
+        }.font(.footnote)
+    }
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ViewThatFits(in: .horizontal) {
+                HStack {
+                    connectionLabel.fixedSize()
+                    Spacer(minLength: 12)
+                    actions.fixedSize()
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    connectionLabel.fixedSize(horizontal: false, vertical: true)
+                    actions
+                }
+            }
+            if let message = model.startupError ?? model.error { notice(message, color: .red) }
+            if model.pending != nil {
+                notice("上次提交结果尚未确认。重试沿用原请求，输入暂时锁定。", color: .workspaceTeal)
+                Button("重试原提交") { Task { await model.retry() } }
+                    .buttonStyle(.bordered).disabled(model.busy)
+            }
+        }.frame(maxWidth: .infinity, alignment: .leading)
+    }
     private func notice(_ text: String, color: Color) -> some View {
         Text(text).font(.footnote).foregroundStyle(color)
             .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-            .background(color.opacity(0.08)).padding(.horizontal, 16).padding(.vertical, 4)
+            .background(color.opacity(0.08))
     }
 }
 
 @MainActor private struct HomeView: View {
     @ObservedObject var model: WorkspaceModel
+    let status: WorkspaceStatusView
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
+                status
                 Text("把设计，变成有依据的判断。").font(.title2.bold())
                 Text(model.cached ? "显示本机缓存 · 联网后刷新" : "与电脑工作台共享评审记录")
                     .font(.footnote).foregroundStyle(.secondary)
                 Button { model.createPage() } label: {
                     Label("新建设计评审", systemImage: "plus").frame(maxWidth: .infinity).padding(.vertical, 7)
-                }.buttonStyle(.borderedProminent).disabled(!model.editable).accessibilityIdentifier("new-review")
+                }.buttonStyle(.borderedProminent).tint(.workspaceButton).disabled(!model.editable).accessibilityIdentifier("new-review")
                 if model.rows.isEmpty {
                     ContentUnavailableView("还没有评审", systemImage: "doc.text.magnifyingglass",
                         description: Text("创建一份设计，或在电脑提交后刷新。"))
@@ -118,6 +149,8 @@ import SwiftUI
 
 @MainActor private struct CreateReviewView: View {
     @ObservedObject var model: WorkspaceModel
+    let status: WorkspaceStatusView
+    @Environment(\.dynamicTypeSize) private var textSize
     @State private var choosing = false
     @State private var query = ""
     private func binding<T>(_ key: WritableKeyPath<ReviewInput, T>) -> Binding<T> {
@@ -127,31 +160,33 @@ import SwiftUI
     }
     var body: some View {
         Form {
+            Section { status }
             Section("描述你的设计") {
                 Button("填入演示示例") { model.example() }
                 TextField("评审名称", text: binding(\.title)).accessibilityIdentifier("review-title")
                 TextEditor(text: binding(\.design)).frame(minHeight: 150).accessibilityIdentifier("design")
                 Text("\(model.draft.design.unicodeScalars.count)/8000 字符 · 草稿保存在设备").font(.caption).foregroundStyle(.secondary)
-            }
+            }.disabled(!model.editable)
             Section("检查范围 · \(model.draft.checkIDs.count)/8") {
                 Text(model.draft.checkIDs.joined(separator: " · ")).font(.subheadline)
                 Button("调整检查项") { choosing = true }.disabled(model.checks.isEmpty)
-            }
+            }.disabled(!model.editable)
             Section {
-                Picker("评审方式", selection: binding(\.mode)) {
-                    Text("助手评审").tag("mcp")
-                    Text("离线模拟").tag("scripted")
-                }.pickerStyle(.segmented)
+                if textSize.isAccessibilitySize {
+                    modePicker.pickerStyle(.inline)
+                } else {
+                    modePicker.pickerStyle(.segmented)
+                }
                 Text(model.draft.mode == "mcp" ? "提交后，让电脑中连接 MCP 的助手处理。手机可继续回答和查看结果。" : "固定程序展示流程，本次不调用模型。")
                     .font(.footnote).foregroundStyle(.secondary)
-            }
+            }.disabled(!model.editable)
             Section {
                 Button { Task { await model.create() } } label: {
                     Text("提交评审").frame(maxWidth: .infinity)
-                }.buttonStyle(.borderedProminent).accessibilityIdentifier("submit")
-            }
+                }.buttonStyle(.borderedProminent).tint(.workspaceButton).accessibilityIdentifier("submit")
+            }.disabled(!model.editable)
         }
-        .disabled(!model.editable)
+        .accessibilityIdentifier("create-form")
         .scrollDismissesKeyboard(.interactively)
         .sheet(isPresented: $choosing) {
             NavigationStack {
@@ -169,15 +204,23 @@ import SwiftUI
             }
         }
     }
+    private var modePicker: some View {
+        Picker("评审方式", selection: binding(\.mode)) {
+            Text("助手评审").tag("mcp")
+            Text("离线模拟").tag("scripted")
+        }
+    }
 }
 
 @MainActor private struct ReviewDetailView: View {
     @ObservedObject var model: WorkspaceModel
+    let status: WorkspaceStatusView
     @State private var copied = false
     var body: some View {
         ScrollView {
             if let review = model.review {
                 VStack(alignment: .leading, spacing: 20) {
+                    status
                     Text(statusLabel(review.status)).font(.subheadline.bold()).foregroundStyle(Color.workspaceTeal)
                         .accessibilityIdentifier("review-status")
                     Text(review.input.title).font(.title2.bold())
@@ -206,7 +249,7 @@ import SwiftUI
                             }
                         }
                         Button("保存回答并继续") { Task { await model.answer() } }
-                            .buttonStyle(.borderedProminent).disabled(!model.editable).accessibilityIdentifier("answer-submit")
+                            .buttonStyle(.borderedProminent).tint(.workspaceButton).disabled(!model.editable).accessibilityIdentifier("answer-submit")
                     }
                     if let report = review.report {
                         Text(report.summary).accessibilityIdentifier("report-summary")
@@ -238,10 +281,12 @@ import SwiftUI
 @MainActor private struct SourceView: View {
     let source: Source?
     let quote: String
+    let status: WorkspaceStatusView
     var body: some View {
         ScrollView {
             if let source {
                 VStack(alignment: .leading, spacing: 20) {
+                    status
                     Text("引用依据").font(.title2.bold()).accessibilityIdentifier("source-title")
                     Text(source.title).font(.headline)
                     Text(quote).textSelection(.enabled).padding(16)

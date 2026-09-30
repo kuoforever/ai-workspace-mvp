@@ -10,18 +10,23 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
@@ -43,10 +48,19 @@ class MainActivity : ComponentActivity() {
                 WorkspaceViewModel(LocalWorkspaceApi(), DeviceStore(applicationContext)) as T
         }
         setContent {
-            MaterialTheme(colorScheme = lightColorScheme(
+            val colors = if (isSystemInDarkTheme()) darkColorScheme(
+                primary = Color(0xFF8BD8C8), onPrimary = Color(0xFF063B32),
+                primaryContainer = Color(0xFF244E44), onPrimaryContainer = Color(0xFFB4EDE0),
+                secondary = Color(0xFFB9CBD2), secondaryContainer = Color(0xFF34474F),
+                onSecondaryContainer = Color(0xFFDCEAF0),
+                background = Color(0xFF111B19), surface = Color(0xFF18221F),
+            ) else lightColorScheme(
                 primary = Color(0xFF25675E), secondary = Color(0xFF596E78),
+                primaryContainer = Color(0xFFD0E9E0), onPrimaryContainer = Color(0xFF092E26),
+                secondaryContainer = Color(0xFFE0E8ED), onSecondaryContainer = Color(0xFF24353E),
                 background = Color(0xFFF5F7F6), surface = Color.White,
-            )) { Workspace(viewModel(factory = factory)) }
+            )
+            MaterialTheme(colorScheme = colors) { Workspace(viewModel(factory = factory)) }
         }
     }
 }
@@ -72,57 +86,69 @@ private fun Workspace(vm: WorkspaceViewModel) {
     if (connectionHelp) AlertDialog(
         onDismissRequest = { connectionHelp = false },
         title = { Text("连接电脑工作台") },
-        text = { SelectionContainer { Text("1. 在电脑启动 AI Workspace 后端。\n2. 连接 USB 调试设备或模拟器，在电脑执行 adb reverse tcp:8765 tcp:8765。\n3. 回到应用检查连接，再刷新记录。\n\n当前地址：http://127.0.0.1:8765\n连接成功表示后端可用；评审仍需电脑上的 MCP 助手处理。") } },
+        text = { SelectionContainer { Text("1. 在电脑启动 AI Workspace 后端。\n2. 连接 USB 调试设备或模拟器，在电脑执行 adb reverse tcp:8765 tcp:8765。\n3. 回到应用检查连接，再刷新记录。\n\n当前地址：http://127.0.0.1:8765\n连接成功表示后端可用；评审仍需电脑上的 MCP 助手处理。", modifier = Modifier.verticalScroll(rememberScrollState())) } },
         confirmButton = { TextButton(onClick = { connectionHelp = false }) { Text("知道了") } },
     )
     Scaffold(
         modifier = Modifier.semantics { testTagsAsResourceId = true },
         topBar = { TopAppBar(
-            title = { Column {
-                Text("AI Workspace", fontWeight = FontWeight.Bold)
-                Text("SWE · 设计评审", style = MaterialTheme.typography.labelMedium)
-            } },
+            title = { Text("AI Workspace", fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis) },
             navigationIcon = { if (state.page != Page.HOME) TextButton(onClick = vm::back, enabled = !state.busy) { Text("返回") } },
             actions = { if (state.page in listOf(Page.HOME, Page.DETAIL))
                 TextButton(onClick = vm::refresh, enabled = !state.busy) { Text("刷新") }
             },
         ) },
     ) { inset ->
-        Column(Modifier.fillMaxSize().padding(inset).imePadding()) {
-            if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("busy"))
-            Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                Text(state.connection.label, style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.weight(1f).testTag("connection-status"))
-                TextButton(onClick = vm::checkConnection, enabled = !state.busy && state.startupError == null,
-                    modifier = Modifier.testTag("check-connection")) { Text("检查连接") }
-                TextButton(onClick = { connectionHelp = true }) { Text("帮助") }
+        Box(Modifier.fillMaxSize().padding(inset).consumeWindowInsets(inset).imePadding(), contentAlignment = Alignment.TopCenter) {
+            Column(Modifier.fillMaxHeight().widthIn(max = 840.dp).fillMaxWidth().testTag("workspace-content")) {
+                if (state.busy) LinearProgressIndicator(Modifier.fillMaxWidth().testTag("busy"))
+                val header: @Composable () -> Unit = { StatusPanel(state, vm) { connectionHelp = true } }
+                if (state.startupError != null) {
+                    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp)) { item { header() } }
+                    return@Column
+                }
+                when (state.page) {
+                    Page.HOME -> Home(state, vm, header)
+                    Page.CREATE -> Create(state, vm, header)
+                    Page.DETAIL -> Detail(state, vm, header)
+                    Page.SOURCE -> SourcePage(state, header)
+                    Page.EXPORT -> LazyColumn(Modifier.fillMaxSize().testTag("export-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        item { header() }
+                        item { Text("导出预览", style = MaterialTheme.typography.headlineSmall) }
+                        item { Button(onClick = {
+                            context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, state.review?.input?.title ?: "工程评审")
+                                putExtra(Intent.EXTRA_TEXT, state.exported)
+                            }, "分享 Markdown 报告"))
+                        }) { Text("分享报告") } }
+                        item { SelectionContainer { Text(state.exported, style = MaterialTheme.typography.bodySmall) } }
+                    }
+                }
             }
-            if (state.startupError != null) {
-                Text(state.startupError, modifier = Modifier.padding(20.dp).testTag("startup-error"))
-                Button(onClick = vm::reloadLocalData, modifier = Modifier.padding(horizontal = 20.dp).testTag("reload-local")) { Text("重新读取本机记录") }
-                return@Column
-            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun StatusPanel(state: WorkspaceUi, vm: WorkspaceViewModel, help: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(state.connection.label, style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(vertical = 14.dp).testTag("connection-status"))
+            TextButton(onClick = vm::checkConnection, enabled = !state.busy && state.startupError == null,
+                modifier = Modifier.testTag("check-connection")) { Text("检查连接") }
+            TextButton(onClick = help) { Text("帮助") }
+        }
+        if (state.startupError != null) {
+            Text(state.startupError, modifier = Modifier.testTag("startup-error"))
+            Button(onClick = vm::reloadLocalData, modifier = Modifier.testTag("reload-local")) { Text("重新读取本机记录") }
+        } else {
             if (state.error != null) Notice(state.error, error = true)
             if (state.pending != null) {
                 Notice("上次提交结果尚未确认。重试会沿用原请求，输入暂时锁定。")
-                Button(onClick = vm::retry, enabled = !state.busy, modifier = Modifier.padding(horizontal = 20.dp).testTag("retry-command")) { Text("重试原提交") }
-            }
-            when (state.page) {
-                Page.HOME -> Home(state, vm)
-                Page.CREATE -> Create(state, vm)
-                Page.DETAIL -> Detail(state, vm)
-                Page.SOURCE -> SourcePage(state)
-                Page.EXPORT -> LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    item { Text("导出预览", style = MaterialTheme.typography.headlineSmall) }
-                    item { Button(onClick = {
-                        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_SUBJECT, state.review?.input?.title ?: "工程评审")
-                            putExtra(Intent.EXTRA_TEXT, state.exported)
-                        }, "分享 Markdown 报告"))
-                    }) { Text("分享报告") } }
-                    item { SelectionContainer { Text(state.exported, style = MaterialTheme.typography.bodySmall) } }
-                }
+                Button(onClick = vm::retry, enabled = !state.busy, modifier = Modifier.testTag("retry-command")) { Text("重试原提交") }
             }
         }
     }
@@ -130,14 +156,16 @@ private fun Workspace(vm: WorkspaceViewModel) {
 
 @Composable
 private fun Notice(text: String, error: Boolean = false) {
-    Text(text, modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp)
+    Text(text, color = if (error) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)
         .background(if (error) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer,
             MaterialTheme.shapes.medium).padding(14.dp), style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable
-private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel) {
-    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable () -> Unit) {
+    LazyColumn(Modifier.fillMaxSize().testTag("home-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        item { header() }
         item {
             Text("把设计，变成有依据的判断。", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
@@ -163,7 +191,7 @@ private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel) {
+private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable () -> Unit) {
     var picker by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     val enabled = state.editable
@@ -172,19 +200,20 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel) {
         title = { Text("选择检查 · ${state.draft.checkIds.size}/8") },
         text = { Column {
             OutlinedTextField(query, { query = it }, label = { Text("编号或关键词") }, singleLine = true)
-            LazyColumn(Modifier.heightIn(max = 350.dp)) {
+            LazyColumn(Modifier.weight(1f, fill = false).heightIn(max = 350.dp)) {
                 items(state.checks.filter { (it.id + it.question).contains(query, ignoreCase = true) }, key = { it.id }) { check ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Checkbox(check.id in state.draft.checkIds, { vm.toggleCheck(check.id) },
                             enabled = enabled && (state.draft.checkIds.size < 8 || check.id in state.draft.checkIds))
-                        Text("${check.id} ${check.question}", modifier = Modifier.padding(top = 12.dp), style = MaterialTheme.typography.bodySmall)
+                        Text("${check.id} ${check.question}", modifier = Modifier.weight(1f).padding(top = 12.dp), style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
         } },
         confirmButton = { TextButton(onClick = { picker = false }) { Text("完成") } },
     )
-    LazyColumn(Modifier.testTag("create-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("create-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { header() }
         item {
             Text("描述你的设计", style = MaterialTheme.typography.headlineSmall)
             TextButton(onClick = vm::example, enabled = enabled, modifier = Modifier.testTag("fill-example")) { Text("填入演示示例") }
@@ -215,12 +244,13 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel) {
 }
 
 @Composable
-private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel) {
+private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable () -> Unit) {
     val review = state.review ?: return
     val enabled = state.editable
     val context = LocalContext.current
     var copied by remember(review.id) { mutableStateOf(false) }
-    LazyColumn(Modifier.testTag("detail-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("detail-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        item { header() }
         item {
             Text(statusLabel(review.status), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge, modifier = Modifier.testTag("status"))
             Text(review.input.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
@@ -241,8 +271,10 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel) {
         if (review.error != null) item { Text(review.error, color = MaterialTheme.colorScheme.error) }
         if (review.status == "waiting_input") {
             items(review.questions, key = { "question:${it.id}" }) { question ->
+                Text(question.text, fontWeight = FontWeight.SemiBold)
+                Spacer(Modifier.height(8.dp))
                 OutlinedTextField(state.answers[question.id].orEmpty(), { vm.editAnswer(question.id, it) },
-                    label = { Text(question.text) }, enabled = enabled, minLines = 3,
+                    label = { Text("你的回答") }, enabled = enabled, minLines = 3,
                     modifier = Modifier.fillMaxWidth().testTag("answer:${question.id}"))
             }
             item { Button(onClick = vm::answer, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag("answer-submit")) { Text("保存回答并继续") } }
@@ -273,9 +305,10 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel) {
 }
 
 @Composable
-private fun SourcePage(state: WorkspaceUi) {
+private fun SourcePage(state: WorkspaceUi, header: @Composable () -> Unit) {
     val source = state.source ?: return
-    LazyColumn(contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(Modifier.fillMaxSize().testTag("source-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item { header() }
         item { Text("引用依据", style = MaterialTheme.typography.headlineSmall) }
         item { Text(source.title, fontWeight = FontWeight.Bold) }
         item { SelectionContainer { Text(state.quote, modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer).padding(16.dp)) } }

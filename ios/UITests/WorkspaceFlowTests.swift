@@ -4,9 +4,13 @@ final class WorkspaceFlowTests: XCTestCase {
     private let app = XCUIApplication()
     override func setUpWithError() throws {
         continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_CN"]
         app.launch()
         XCTAssertTrue(app.buttons["new-review"].waitForExistence(timeout: 30))
+    }
+    override func tearDownWithError() throws {
+        XCUIDevice.shared.orientation = .portrait
     }
     private func waitStatus(_ value: String) {
         let field = app.staticTexts["review-status"]
@@ -15,6 +19,14 @@ final class WorkspaceFlowTests: XCTestCase {
         waitForExpectations(timeout: 30)
     }
     private func tap(_ element: XCUIElement) {
+        for _ in 0..<6 {
+            if element.exists && element.isHittable { break }
+            app.swipeDown()
+        }
+        for _ in 0..<16 {
+            if element.exists && element.isHittable { break }
+            app.swipeUp()
+        }
         XCTAssertTrue(element.waitForExistence(timeout: 15))
         let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: element)
         XCTAssertEqual(XCTWaiter.wait(for: [enabled], timeout: 20), .completed)
@@ -59,6 +71,37 @@ final class WorkspaceFlowTests: XCTestCase {
     }
     private func object(_ path: String, body: [String: Any]? = nil) throws -> [String: Any] {
         try XCTUnwrap(request(path, body: body) as? [String: Any])
+    }
+    func testLayoutKeepsDraftAndSubmitReachableAfterRotation() throws {
+        let title = "Layout " + String(UUID().uuidString.prefix(8))
+        let designText = "Order API checks payment status before retrying a failed request."
+        tap(app.buttons["new-review"])
+        let titleField = app.textFields["review-title"]
+        tap(titleField); titleField.typeText(title)
+        let design = app.textViews["design"]
+        tap(design); design.typeText(designText)
+        shot("06-layout-keyboard")
+        dismissKeyboard()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let rotated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            self.app.frame.width > self.app.frame.height
+        }, object: app)
+        XCTAssertEqual(XCTWaiter.wait(for: [rotated], timeout: 15), .completed)
+        tap(titleField)
+        XCTAssertEqual(titleField.value as? String, title)
+        dismissKeyboard()
+        tap(design)
+        XCTAssertEqual(design.value as? String, designText)
+        dismissKeyboard()
+        tap(app.buttons["submit"])
+        waitStatus("等待助手")
+        shot("07-layout-landscape")
+        let rows = try XCTUnwrap(request("/reviews") as? [[String: Any]])
+        XCTAssertEqual(rows.filter { $0["title"] as? String == title }.count, 1)
+        let form = app.scrollViews["detail-scroll"]
+        if app.frame.width > 900 {
+            XCTAssertTrue(form.frame.width <= 841, "Tablet reports must retain a readable content width")
+        }
     }
     func testNativeCreateRestoreClarifyReadSourceAndExport() throws {
         let title = "iOS UI " + String(UUID().uuidString.prefix(8))

@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.AIWorkspace" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#F5F7F6</item>
+        <item name="android:colorAccent">#25675E</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

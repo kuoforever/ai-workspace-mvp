@@ -37,4 +37,39 @@ if [ "$test_exit" -eq 0 ]; then
   test -s ios-evidence/AIWorkspace-simulator.app.zip
   test -s ios-evidence/ci-demo.mp4
 fi
-exit "$test_exit"
+if [ "$test_exit" -ne 0 ]; then exit "$test_exit"; fi
+
+# Reuse the compiled application on a compact phone and a tablet. Real simulator
+# settings exercise Dynamic Type and dark appearance without app-only test hooks.
+runtime_id=$(.venv/bin/python -c 'import json; d=json.load(open("ios-evidence/devices.json")); print(next(k for k in d["devices"] if k.endswith("iOS-18-5")))')
+compact_id=$(xcrun simctl create "AI Workspace compact check" com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation "$runtime_id")
+tablet_id=$(.venv/bin/python -c 'import json; d=json.load(open("ios-evidence/devices.json")); print(next(v["udid"] for k,rows in d["devices"].items() if k.endswith("iOS-18-5") for v in rows if v["name"].startswith("iPad")))')
+xcrun simctl shutdown "$device_id"
+for profile in compact tablet; do
+  if [ "$profile" = compact ]; then layout_id="$compact_id"; else layout_id="$tablet_id"; fi
+  xcrun simctl boot "$layout_id"
+  xcrun simctl bootstatus "$layout_id" -b
+  old_appearance=$(xcrun simctl ui "$layout_id" appearance | tr '[:upper:]' '[:lower:]')
+  old_content_size=$(xcrun simctl ui "$layout_id" content_size)
+  xcrun simctl ui "$layout_id" appearance dark
+  xcrun simctl ui "$layout_id" content_size accessibility-extra-extra-extra-large
+  {
+    printf 'Device: %s\n' "$layout_id"
+    xcrun simctl ui "$layout_id" appearance
+    xcrun simctl ui "$layout_id" content_size
+  } >"ios-evidence/layout-$profile-settings.txt"
+  layout_exit=0
+  xcodebuild test-without-building -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
+    -destination "platform=iOS Simulator,id=$layout_id" -derivedDataPath ios/build \
+    -only-testing:AIWorkspaceUITests/WorkspaceFlowTests/testLayoutKeepsDraftAndSubmitReachableAfterRotation \
+    -resultBundlePath "ios-evidence/Layout-$profile.xcresult" -parallel-testing-enabled NO \
+    CODE_SIGNING_ALLOWED=NO >"ios-evidence/layout-$profile.log" 2>&1 || layout_exit=$?
+  tail -60 "ios-evidence/layout-$profile.log"
+  xcrun xcresulttool get test-results summary --path "ios-evidence/Layout-$profile.xcresult" >"ios-evidence/layout-$profile-summary.json"
+  xcrun xcresulttool export attachments --path "ios-evidence/Layout-$profile.xcresult" --output-path "ios-evidence/layout-$profile-screenshots"
+  xcrun simctl ui "$layout_id" content_size "$old_content_size"
+  xcrun simctl ui "$layout_id" appearance "$old_appearance"
+  xcrun simctl shutdown "$layout_id"
+  if [ "$layout_exit" -ne 0 ]; then exit "$layout_exit"; fi
+done
+xcrun simctl delete "$compact_id"
