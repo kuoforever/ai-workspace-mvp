@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -22,8 +24,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -195,6 +200,13 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
     var picker by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     val enabled = state.editable
+    val designRequester = remember { BringIntoViewRequester() }
+    var designFocused by remember { mutableStateOf(false) }
+    val keyboardVisible = WindowInsets.isImeVisible
+    val compactEditor = LocalConfiguration.current.screenHeightDp < 480 || LocalDensity.current.fontScale > 1.3f
+    LaunchedEffect(keyboardVisible, designFocused) {
+        if (keyboardVisible && designFocused) designRequester.bringIntoView()
+    }
     if (picker) AlertDialog(
         onDismissRequest = { picker = false },
         title = { Text("选择检查 · ${state.draft.checkIds.size}/8") },
@@ -222,7 +234,8 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
             enabled = enabled, label = { Text("评审名称") }, modifier = Modifier.fillMaxWidth().testTag("title"), singleLine = true) }
         item { OutlinedTextField(state.draft.design, { if (it.length <= 8000) vm.edit(state.draft.copy(design = it)) },
             enabled = enabled, label = { Text("设计材料") }, supportingText = { Text("${state.draft.design.length}/8000 · 草稿保存在设备") },
-            modifier = Modifier.fillMaxWidth().testTag("design"), minLines = 5) }
+            modifier = Modifier.fillMaxWidth().bringIntoViewRequester(designRequester)
+                .onFocusChanged { designFocused = it.isFocused }.testTag("design"), minLines = if (compactEditor) 2 else 5) }
         item {
             Text("检查范围 · ${state.draft.checkIds.size}/8", fontWeight = FontWeight.SemiBold)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -243,12 +256,15 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable () -> Unit) {
     val review = state.review ?: return
     val enabled = state.editable
     val context = LocalContext.current
     var copied by remember(review.id) { mutableStateOf(false) }
+    val keyboardVisible = WindowInsets.isImeVisible
+    val compactEditor = LocalConfiguration.current.screenHeightDp < 480 || LocalDensity.current.fontScale > 1.3f
     LazyColumn(Modifier.fillMaxSize().testTag("detail-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { header() }
         item {
@@ -271,11 +287,17 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
         if (review.error != null) item { Text(review.error, color = MaterialTheme.colorScheme.error) }
         if (review.status == "waiting_input") {
             items(review.questions, key = { "question:${it.id}" }) { question ->
+                val requester = remember { BringIntoViewRequester() }
+                var focused by remember { mutableStateOf(false) }
+                LaunchedEffect(keyboardVisible, focused) {
+                    if (keyboardVisible && focused) requester.bringIntoView()
+                }
                 Text(question.text, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(state.answers[question.id].orEmpty(), { vm.editAnswer(question.id, it) },
-                    label = { Text("你的回答") }, enabled = enabled, minLines = 3,
-                    modifier = Modifier.fillMaxWidth().testTag("answer:${question.id}"))
+                    label = { Text("你的回答") }, enabled = enabled, minLines = if (compactEditor) 2 else 3,
+                    modifier = Modifier.fillMaxWidth().bringIntoViewRequester(requester)
+                        .onFocusChanged { focused = it.isFocused }.testTag("answer:${question.id}"))
             }
             item { Button(onClick = vm::answer, enabled = enabled, modifier = Modifier.fillMaxWidth().testTag("answer-submit")) { Text("保存回答并继续") } }
         }

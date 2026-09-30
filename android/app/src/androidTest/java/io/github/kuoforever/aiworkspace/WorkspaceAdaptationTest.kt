@@ -8,6 +8,8 @@ import android.os.Build
 import android.provider.MediaStore
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -54,6 +56,7 @@ class WorkspaceAdaptationTest {
         // These system settings belong to the isolated CI emulator. Restore each
         // override so later recovery tests exercise the original device profile.
         assumeTrue("Window overrides require an isolated emulator", Build.HARDWARE in listOf("ranchu", "goldfish"))
+        assumeTrue(Build.VERSION.SDK_INT >= 30)
         val oldFont = shell("settings get system font_scale").takeUnless { it == "null" } ?: "1.0"
         val oldSize = Regex("Override size: (\\d+x\\d+)").find(shell("wm size"))?.groupValues?.get(1) ?: "reset"
         val oldDensity = Regex("Override density: (\\d+)").find(shell("wm density"))?.groupValues?.get(1) ?: "reset"
@@ -80,6 +83,14 @@ class WorkspaceAdaptationTest {
             compose.onNodeWithTag("title").performTextReplacement(title)
             show("design")
             compose.onNodeWithTag("design").performClick().performTextReplacement(design)
+            compose.waitUntil(15000) {
+                compose.activity.window.decorView.rootWindowInsets?.isVisible(android.view.WindowInsets.Type.ime()) == true
+            }
+            val layouts = mutableListOf<TextLayoutResult>()
+            compose.onNodeWithTag("design").performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
+            compose.waitUntil(15000) {
+                compose.onNodeWithTag("design").fetchSemanticsNode().boundsInRoot.height >= layouts.maxOf { it.size.height }
+            }
             shot("06-compact-dark-keyboard")
             compose.activity.runOnUiThread {
                 val manager = compose.activity.getSystemService(InputMethodManager::class.java)
