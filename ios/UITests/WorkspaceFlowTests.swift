@@ -51,14 +51,14 @@ final class WorkspaceFlowTests: XCTestCase {
             if element.exists && element.isHittable { break }
             scrollPage(up: true)
         }
-        XCTAssertTrue(element.waitForExistence(timeout: 15))
+        XCTAssertTrue(element.waitForExistence(timeout: 15), "Missing control: \(element.identifier)")
         let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: element)
         XCTAssertEqual(XCTWaiter.wait(for: [enabled], timeout: 20), .completed)
         for _ in 0..<8 {
             if element.isHittable { break }
             scrollPage(up: true)
         }
-        XCTAssertTrue(element.isHittable)
+        XCTAssertTrue(element.isHittable, "Control is not reachable: \(element.identifier)")
         element.tap()
     }
     private func dismissKeyboard() {

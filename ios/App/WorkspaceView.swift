@@ -153,7 +153,6 @@ import SwiftUI
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var choosing = false
     @State private var query = ""
-    @State private var keyboardVisible = false
     private enum Field { case title, design }
     @FocusState private var focusedField: Field?
     private func binding<T>(_ key: WritableKeyPath<ReviewInput, T>) -> Binding<T> {
@@ -190,21 +189,10 @@ import SwiftUI
         .accessibilityIdentifier("create-form")
         .scrollDismissesKeyboard(.interactively)
         .onChange(of: model.draft.mode) { _, _ in focusedField = nil }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
-            keyboardVisible = true
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            keyboardVisible = false
-        }
-        .safeAreaInset(edge: .bottom) {
-            if !keyboardVisible {
-                Button { Task { await model.create() } } label: {
-                    Text("提交评审").fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                }.buttonStyle(.borderedProminent).tint(.workspaceButton)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("提交评审", systemImage: "checkmark") { Task { await model.create() } }
                     .disabled(!model.editable).accessibilityIdentifier("submit")
-                    .padding(.horizontal, 20).padding(.vertical, 8)
-                    .background(Color(uiColor: .systemGroupedBackground))
             }
         }
         .sheet(isPresented: $choosing) {
