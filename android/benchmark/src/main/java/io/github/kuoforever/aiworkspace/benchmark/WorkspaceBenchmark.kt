@@ -44,7 +44,16 @@ class WorkspaceBenchmark {
                 device.waitForIdle()
                 // The keyboard can move the lazy header out of the viewport.
                 // Bring the save acknowledgement back into view after each paste.
-                device.findObject(By.res("create-list")).scroll(Direction.UP, 1.0f)
+                val bounds = device.findObject(By.res("create-list")).visibleBounds
+                repeat(4) {
+                    if (!device.hasObject(By.res("save-state"))) {
+                        // Scroll the form gutter: a gesture inside the editor
+                        // correctly scrolls its 8000-character contents instead.
+                        device.swipe(bounds.right - 5, bounds.top + bounds.height() / 3,
+                            bounds.right - 5, bounds.top + bounds.height() * 3 / 4, 30)
+                        device.waitForIdle()
+                    }
+                }
                 check(device.wait(Until.hasObject(By.res("save-state").text("输入已保存")), 15000))
             }
             val field = device.findObject(By.res("design"))
