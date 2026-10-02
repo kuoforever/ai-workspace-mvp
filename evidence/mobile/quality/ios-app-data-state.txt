@@ -1,0 +1,1 @@
+fresh-app-data-on-isolated-ci-simulator

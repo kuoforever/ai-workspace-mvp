@@ -1,5 +1,7 @@
 # 来源与依赖
 
+模拟器轨迹分析可选使用 [Perfetto Python API](https://perfetto.dev/docs/analysis/trace-processor-python) 与其配套 Trace Processor；分析工具保留版本、查询及原始轨迹摘要，不作为应用运行依赖。
+
 ## 知识与界面
 
 工程手册、249 项检查、33 类决策、110 篇文档和基础 Web 界面来自个人 SWE 工作台 `2026.09.27-2`。`knowledge/catalog.json` 为对应内容索引，[provenance.json](knowledge/provenance.json) 记录导入版本及来源摘要。材料中的外部引用保持原样。

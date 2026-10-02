@@ -1,0 +1,224 @@
+[
+  {
+    "testIdentifier" : "DocumentPerformanceTests/testEightThousandCharacterImportQuoteAndExport()",
+    "testIdentifierURL" : "test://com.apple.xcode/AIWorkspace/AIWorkspaceTests/DocumentPerformanceTests/testEightThousandCharacterImportQuoteAndExport",
+    "testRuns" : [
+      {
+        "device" : {
+          "deviceId" : "F0E646EF-4792-4F36-B48B-EC89B3A6B73B",
+          "deviceName" : "iPhone 16"
+        },
+        "metrics" : [
+          {
+            "baselineAverage" : 0,
+            "baselineName" : "",
+            "displayName" : "Memory Peak Physical",
+            "identifier" : "com.apple.dt.XCTMetric_Memory.physical_peak",
+            "maxPercentRegression" : 10,
+            "maxPercentRelativeStandardDeviation" : 10,
+            "maxRegression" : 0,
+            "maxStandardDeviation" : 10,
+            "measurements" : [
+              29858.816,
+              29907.968,
+              29924.352,
+              29940.736,
+              29940.736,
+              29940.736,
+              29957.12,
+              29957.12,
+              29957.12,
+              29973.504
+            ],
+            "polarity" : "prefers smaller",
+            "unitOfMeasurement" : "kB"
+          },
+          {
+            "baselineAverage" : 0,
+            "baselineName" : "",
+            "displayName" : "Memory Physical",
+            "identifier" : "com.apple.dt.XCTMetric_Memory.physical",
+            "maxPercentRegression" : 10,
+            "maxPercentRelativeStandardDeviation" : 10,
+            "maxRegression" : 0,
+            "maxStandardDeviation" : 10,
+            "measurements" : [
+              16.384,
+              32.768,
+              16.384,
+              16.384,
+              0,
+              0,
+              16.384,
+              0,
+              0,
+              16.384
+            ],
+            "polarity" : "prefers smaller",
+            "unitOfMeasurement" : "kB"
+          },
+          {
+            "baselineAverage" : 0,
+            "baselineName" : "",
+            "displayName" : "Clock Monotonic Time",
+            "identifier" : "com.apple.dt.XCTMetric_Clock.time.monotonic",
+            "maxPercentRegression" : 10,
+            "maxPercentRelativeStandardDeviation" : 10,
+            "maxRegression" : 0,
+            "maxStandardDeviation" : 10,
+            "measurements" : [
+              0.001001179,
+              0.001091092,
+              0.00114021,
+              0.0011597670000000001,
+              0.001014217,
+              0.001035906,
+              0.001043737,
+              0.001023606,
+              0.0013034720000000002,
+              0.0022624620000000002
+            ],
+            "polarity" : "prefers smaller",
+            "unitOfMeasurement" : "s"
+          }
+        ],
+        "testPlanConfiguration" : {
+          "configurationId" : "1",
+          "configurationName" : "Test Scheme Action"
+        }
+      }
+    ]
+  },
+  {
+    "testIdentifier" : "DocumentPerformanceTests/testTwentyFullReportCacheReloads()",
+    "testIdentifierURL" : "test://com.apple.xcode/AIWorkspace/AIWorkspaceTests/DocumentPerformanceTests/testTwentyFullReportCacheReloads",
+    "testRuns" : [
+      {
+        "device" : {
+          "deviceId" : "F0E646EF-4792-4F36-B48B-EC89B3A6B73B",
+          "deviceName" : "iPhone 16"
+        },
+        "metrics" : [
+          {
+            "baselineAverage" : 0,
+            "baselineName" : "",
+            "displayName" : "Memory Peak Physical",
+            "identifier" : "com.apple.dt.XCTMetric_Memory.physical_peak",
+            "maxPercentRegression" : 10,
+            "maxPercentRelativeStandardDeviation" : 10,
+            "maxRegression" : 0,
+            "maxStandardDeviation" : 10,
+            "measurements" : [
+              34577.408,
+              34610.176,
+              34610.176,
+              34610.176,
+              34610.176,
+              34610.176,
+              34610.176,
+              34610.176,
+              34610.176,
+              34626.56
+            ],
+            "polarity" : "prefers smaller",
+            "unitOfMeasurement" : "kB"
+          },
+          {
+            "baselineAverage" : 0,
+            "baselineName" : "",
+            "displayName" : "Memory Physical",
+            "identifier" : "com.apple.dt.XCTMetric_Memory.physical",
+            "maxPercentRegression" : 10,
+            "maxPercentRelativeStandardDeviation" : 10,
+            "maxRegression" : 0,
+            "maxStandardDeviation" : 10,
+            "measurements" : [
+              147.456,
+              32.768,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              16.384
+            ],
+            "polarity" : "prefers smaller",
+            "unitOfMeasurement" : "kB"
+          },
+          {
+            "baselineAverage" : 0,
+            "baselineName" : "",
+            "displayName" : "Clock Monotonic Time",
+            "identifier" : "com.apple.dt.XCTMetric_Clock.time.monotonic",
+            "maxPercentRegression" : 10,
+            "maxPercentRelativeStandardDeviation" : 10,
+            "maxRegression" : 0,
+            "maxStandardDeviation" : 10,
+            "measurements" : [
+              0.005427867,
+              0.007338426,
+              0.006790256000000001,
+              0.006137372,
+              0.005301218,
+              0.005434714,
+              0.006026467000000001,
+              0.005365834000000001,
+              0.005343858,
+              0.006857455
+            ],
+            "polarity" : "prefers smaller",
+            "unitOfMeasurement" : "s"
+          }
+        ],
+        "testPlanConfiguration" : {
+          "configurationId" : "1",
+          "configurationName" : "Test Scheme Action"
+        }
+      }
+    ]
+  },
+  {
+    "testIdentifier" : "LaunchPerformanceTests/testColdApplicationLaunch()",
+    "testIdentifierURL" : "test://com.apple.xcode/AIWorkspace/AIWorkspaceUITests/LaunchPerformanceTests/testColdApplicationLaunch",
+    "testRuns" : [
+      {
+        "device" : {
+          "deviceId" : "F0E646EF-4792-4F36-B48B-EC89B3A6B73B",
+          "deviceName" : "iPhone 16"
+        },
+        "metrics" : [
+          {
+            "baselineAverage" : 0,
+            "baselineName" : "",
+            "displayName" : "Duration (ApplicationFirstFramePresentationResponsive)",
+            "identifier" : "com.apple.dt.XCTMetric_ApplicationLaunch-ApplicationFirstFramePresentationResponsive.duration",
+            "maxPercentRegression" : 10,
+            "maxPercentRelativeStandardDeviation" : 10,
+            "maxRegression" : 0,
+            "maxStandardDeviation" : 10,
+            "measurements" : [
+              3.1368350830000002,
+              2.18462675,
+              1.7069920420000002,
+              2.041832167,
+              1.862480458,
+              1.661109667,
+              1.681517125,
+              1.8673251670000002,
+              1.8469540420000001,
+              1.53252075
+            ],
+            "polarity" : "prefers smaller",
+            "unitOfMeasurement" : "s"
+          }
+        ],
+        "testPlanConfiguration" : {
+          "configurationId" : "1",
+          "configurationName" : "Test Scheme Action"
+        }
+      }
+    ]
+  }
+]

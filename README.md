@@ -51,6 +51,7 @@ FastAPI、LangGraph、SQLite、MCP Python SDK；Web 使用 HTML / JavaScript，A
 - [使用指南](docs/usage.md)：MCP 配置、评审流程、跨端接续与报告回放。
 - [架构设计](docs/architecture.md)：模块、状态机、数据一致性与客户端恢复。
 - [开发指南](docs/development.md)：目录、配置、测试与构建。
+- [移动端质量](docs/mobile-quality.md)：取消与重试、优化构建、模拟器性能复现和[实测基线](evidence/mobile/quality/README.md)。
 - [评测](evals/README.md)：数据集、实验方法与结果。
 - [测试报告](evidence/README.md)：与源码提交绑定的检查结果、截图与录屏。
 - [来源与依赖](ATTRIBUTION.md)：知识内容、设计参考和第三方依赖。

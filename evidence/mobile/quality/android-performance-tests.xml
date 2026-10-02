@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="io.github.kuoforever.aiworkspace.benchmark.WorkspaceBenchmark" tests="3" failures="0" errors="0" skipped="0" time="168.79" timestamp="2026-10-02T05:49:07" hostname="localhost">
+  <properties>
+    <property name="device" value="emulator-5554 - 15" />
+    <property name="flavor" value="" />
+    <property name="project" value=":benchmark" />
+  </properties>
+  <testcase name="coldLaunch" classname="io.github.kuoforever.aiworkspace.benchmark.WorkspaceBenchmark" time="47.26" />
+  <testcase name="scrollTwentyReviewRows" classname="io.github.kuoforever.aiworkspace.benchmark.WorkspaceBenchmark" time="95.593" />
+  <testcase name="pasteEightThousandCharacters" classname="io.github.kuoforever.aiworkspace.benchmark.WorkspaceBenchmark" time="23.732" />
+</testsuite>

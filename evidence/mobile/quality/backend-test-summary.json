@@ -1,0 +1,9 @@
+{
+  "source": "GitHub Actions log for run 36969617844",
+  "source_sha256": "3224c3b76eb6712789c639daada222afdf6c1c1a4e2f4af9f52e1e4ead146ae9",
+  "passed_per_os": 30,
+  "proof_lines": [
+    "verify (ubuntu-latest)\tUNKNOWN STEP\t2026-10-02T05:35:40.0692683Z 30 passed in 4.97s",
+    "verify (windows-latest)\tUNKNOWN STEP\t2026-10-02T05:35:58.2030930Z 30 passed in 8.93s"
+  ]
+}

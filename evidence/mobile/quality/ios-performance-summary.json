@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "platform": "ios",
+  "environment": "simulator",
+  "configuration": "optimized, code coverage disabled for iOS performance",
+  "interpretation": "Descriptive baseline; not real-device performance, no cross-platform ranking",
+  "percentile_method": "linear interpolation over saved samples",
+  "contexts": [],
+  "measurements": [
+    {
+      "test": "/Users/runner/work/ai-workspace-mvp/ai-workspace-mvp/ios/Tests/DocumentPerformanceTests.swift:30: Test Case '-[AIWorkspaceTests.DocumentPerformanceTests testEightThousandCharacterImportQuoteAndExport]'",
+      "metric": "Memory Peak Physical, kB",
+      "source": "tests.log",
+      "count": 10,
+      "min": 29858.816,
+      "p50": 29940.736,
+      "p95": 29966.1312,
+      "max": 29973.504,
+      "samples": [
+        29858.816,
+        29907.968,
+        29924.352,
+        29940.736,
+        29940.736,
+        29940.736,
+        29957.12,
+        29957.12,
+        29957.12,
+        29973.504
+      ]
+    },
+    {
+      "test": "/Users/runner/work/ai-workspace-mvp/ai-workspace-mvp/ios/Tests/DocumentPerformanceTests.swift:30: Test Case '-[AIWorkspaceTests.DocumentPerformanceTests testEightThousandCharacterImportQuoteAndExport]'",
+      "metric": "Memory Physical, kB",
+      "source": "tests.log",
+      "count": 10,
+      "min": 0.0,
+      "p50": 16.384,
+      "p95": 25.39519999999998,
+      "max": 32.768,
+      "samples": [
+        16.384,
+        32.768,
+        16.384,
+        16.384,
+        0.0,
+        0.0,
+        16.384,
+        0.0,
+        0.0,
+        16.384
+      ]
+    },
+    {
+      "test": "/Users/runner/work/ai-workspace-mvp/ai-workspace-mvp/ios/Tests/DocumentPerformanceTests.swift:30: Test Case '-[AIWorkspaceTests.DocumentPerformanceTests testEightThousandCharacterImportQuoteAndExport]'",
+      "metric": "Clock Monotonic Time, s",
+      "source": "tests.log",
+      "count": 10,
+      "min": 0.001001,
+      "p50": 0.0010674999999999999,
+      "p95": 0.001830449999999999,
+      "max": 0.002262,
+      "samples": [
+        0.001001,
+        0.001091,
+        0.00114,
+        0.00116,
+        0.001014,
+        0.001036,
+        0.001044,
+        0.001024,
+        0.001303,
+        0.002262
+      ]
+    },
+    {
+      "test": "/Users/runner/work/ai-workspace-mvp/ai-workspace-mvp/ios/Tests/DocumentPerformanceTests.swift:45: Test Case '-[AIWorkspaceTests.DocumentPerformanceTests testTwentyFullReportCacheReloads]'",
+      "metric": "Memory Peak Physical, kB",
+      "source": "tests.log",
+      "count": 10,
+      "min": 34577.408,
+      "p50": 34610.176,
+      "p95": 34619.1872,
+      "max": 34626.56,
+      "samples": [
+        34577.408,
+        34610.176,
+        34610.176,
+        34610.176,
+        34610.176,
+        34610.176,
+        34610.176,
+        34610.176,
+        34610.176,
+        34626.56
+      ]
+    },
+    {
+      "test": "/Users/runner/work/ai-workspace-mvp/ai-workspace-mvp/ios/Tests/DocumentPerformanceTests.swift:45: Test Case '-[AIWorkspaceTests.DocumentPerformanceTests testTwentyFullReportCacheReloads]'",
+      "metric": "Memory Physical, kB",
+      "source": "tests.log",
+      "count": 10,
+      "min": 0.0,
+      "p50": 0.0,
+      "p95": 95.84639999999987,
+      "max": 147.456,
+      "samples": [
+        147.456,
+        32.768,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        16.384
+      ]
+    },
+    {
+      "test": "/Users/runner/work/ai-workspace-mvp/ai-workspace-mvp/ios/Tests/DocumentPerformanceTests.swift:45: Test Case '-[AIWorkspaceTests.DocumentPerformanceTests testTwentyFullReportCacheReloads]'",
+      "metric": "Clock Monotonic Time, s",
+      "source": "tests.log",
+      "count": 10,
+      "min": 0.005301,
+      "p50": 0.0057304999999999995,
+      "p95": 0.00712155,
+      "max": 0.007338,
+      "samples": [
+        0.005428,
+        0.007338,
+        0.00679,
+        0.006137,
+        0.005301,
+        0.005435,
+        0.006026,
+        0.005366,
+        0.005344,
+        0.006857
+      ]
+    },
+    {
+      "test": "/Users/runner/work/ai-workspace-mvp/ai-workspace-mvp/ios/UITests/LaunchPerformanceTests.swift:9: Test Case '-[AIWorkspaceUITests.LaunchPerformanceTests testColdApplicationLaunch]'",
+      "metric": "Duration (ApplicationFirstFramePresentationResponsive), s",
+      "source": "tests.log",
+      "count": 10,
+      "min": 1.532521,
+      "p50": 1.854717,
+      "p95": 2.708341399999999,
+      "max": 3.136835,
+      "samples": [
+        3.136835,
+        2.184627,
+        1.706992,
+        2.041832,
+        1.86248,
+        1.66111,
+        1.681517,
+        1.867325,
+        1.846954,
+        1.532521
+      ]
+    }
+  ]
+}

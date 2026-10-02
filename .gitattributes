@@ -3,5 +3,9 @@
 evals/cases.json -text
 evals/protocol.md -text
 knowledge/catalog.json -text
+# Captured evidence is hashed as bytes; preserve it across operating systems.
+evidence/mobile/quality/** -text whitespace=cr-at-eol
+# Preserve whitespace emitted by xcodebuild in its original diagnostic output.
+evidence/mobile/quality/ios-performance-build-settings.txt whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
 *.png binary
 *.mp4 binary

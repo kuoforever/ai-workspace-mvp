@@ -6,9 +6,9 @@
 
 | 范围 | 已记录结果 | 环境 | 报告 |
 |---|---|---|---|
-| 后端与协议 | 24 项测试通过 | Windows / Ubuntu，Python 3.12 | [CI](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36957786983) |
-| Android | 22 项单元测试、5 项设备测试、6 项进程外检查通过 | Android 15 / API 35 模拟器，小屏与宽窗口 | [文件与后台保存](mobile/documents/README.md) |
-| iOS | 20 项单元测试、5 条界面流程，另两种设备字号组合通过 | iPhone 16、iPhone SE、iPad Pro / iOS 18.5 | [文件与后台保存](mobile/documents/README.md) |
+| 后端与协议 | 30 项测试通过 | Windows / Ubuntu，Python 3.12 | [CI](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36969617844) |
+| Android | 31 项单元测试、5 项设备测试、6 项进程外检查、3 项性能场景通过 | Android 15 / API 35 模拟器，小屏与宽窗口 | [质量与性能](mobile/quality/README.md) |
+| iOS | 24 项单元测试、5 条界面流程、两种设备补充检查、3 项性能场景通过 | iPhone 16、iPhone SE、iPad Pro / iOS 18.5 | [质量与性能](mobile/quality/README.md) |
 
 客户端流程使用模拟数据和已保存的模型输出回放；真实 MCP 生成记录与模拟器回放分别保存。模型输出质量另见[评测文档](../evals/README.md)。本地复现命令见[开发指南](../docs/development.md)。早期发布记录见 [Android v0.2.0](android/README.md) 和 [iOS v0.3.0](ios/README.md)。
 

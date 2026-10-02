@@ -1,0 +1,278 @@
+{
+  "schema_version": 1,
+  "archived_at_utc": "2026-10-02T08:18:48.011517+00:00",
+  "verified_source_commit": "632f03fa2cb23b9ed089bd17213fedd76a9b8c58",
+  "pull_request": "https://github.com/kuoforever/ai-workspace-mvp/pull/1",
+  "source_binding": {
+    "runtime_unchanged_at_archival": true,
+    "verified_git_tree_ids": {
+      "android": "8e94bc261dfa51afd17c710bac8f3e7eae52dfcf",
+      "ios": "f6005770af86cb7434a88f12260e95c551204cab",
+      "app": "94b4476e2f0b2d43cfd98c5183e0fe805acfb37b",
+      "tests": "229847b474233d6a87e5e5d9e788b0e625addf9c",
+      ".github": "8b8487f15c2baf146bed096a820060c4d618c056",
+      "scripts": "c51d87c79831e1734bdf5b74751297487af707fd"
+    },
+    "subsequent_changes": "Report, attribution, evidence and optional trace analysis helper only; native builds refer to verified_source_commit"
+  },
+  "execution": "Simulator, isolated CI services and app data; no live model inference",
+  "fixture": {
+    "execution": "scripted-no-model",
+    "review_count": 20,
+    "design_scalars": 8000,
+    "design_sha256": "a1e5827f20256e35536105add9cc31446a9f0034b0c179e6acbf81c8e2c7170b"
+  },
+  "runs": {
+    "backend": {
+      "databaseId": 36969617844,
+      "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36969617844",
+      "headSha": "632f03fa2cb23b9ed089bd17213fedd76a9b8c58",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "verify (ubuntu-latest)",
+          "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36969617844/job/110720643745",
+          "conclusion": "success"
+        },
+        {
+          "name": "verify (windows-latest)",
+          "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36969617844/job/110720644019",
+          "conclusion": "success"
+        }
+      ]
+    },
+    "android": {
+      "databaseId": 36969617826,
+      "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36969617826",
+      "headSha": "632f03fa2cb23b9ed089bd17213fedd76a9b8c58",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "native",
+          "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36969617826/job/110720650639",
+          "conclusion": "success"
+        }
+      ]
+    },
+    "ios": {
+      "databaseId": 36969617831,
+      "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36969617831",
+      "headSha": "632f03fa2cb23b9ed089bd17213fedd76a9b8c58",
+      "conclusion": "success",
+      "jobs": [
+        {
+          "name": "native",
+          "url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36969617831/job/110720657096",
+          "conclusion": "success"
+        }
+      ]
+    }
+  },
+  "checks": {
+    "backend_tests_per_os": 30,
+    "android_unit_tests": {
+      "tests": 31,
+      "failures": 0,
+      "ignored": 0
+    },
+    "android_device_tests": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "android_process_checks": [
+      "draft_process_restart",
+      "offline_command_process_restart",
+      "connection_check_is_read_only",
+      "single_record_after_retry",
+      "answer_process_restart",
+      "corrupt_journal_recovery"
+    ],
+    "android_performance_tests": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "ios": {
+      "functional": {
+        "totalTestCount": 29,
+        "passedTests": 29,
+        "failedTests": 0,
+        "skippedTests": 0
+      },
+      "performance-tests": {
+        "totalTestCount": 3,
+        "passedTests": 3,
+        "failedTests": 0,
+        "skippedTests": 0
+      },
+      "compact": {
+        "totalTestCount": 1,
+        "passedTests": 1,
+        "failedTests": 0,
+        "skippedTests": 0
+      },
+      "tablet": {
+        "totalTestCount": 1,
+        "passedTests": 1,
+        "failedTests": 0,
+        "skippedTests": 0
+      }
+    },
+    "ios_functional_breakdown": {
+      "unit": 24,
+      "ui": 5
+    },
+    "android_traces_analyzed": 10,
+    "percentiles_recomputed_from_raw_samples": true
+  },
+  "ci_artifacts": {
+    "android": {
+      "id": 11211447386,
+      "name": "android-debug-and-evidence",
+      "size_in_bytes": 83623096,
+      "digest": "sha256:69752f5801980c9e77d757a048f82a9ad8b55e1e6608f0704784e3afcfc4771b",
+      "created_at": "2026-10-02T05:49:20Z",
+      "expires_at": "2026-10-16T05:49:14Z",
+      "archive_download_url": "https://api.github.com/repos/kuoforever/ai-workspace-mvp/actions/artifacts/11211447386/zip"
+    },
+    "ios": {
+      "id": 11210984779,
+      "name": "ios-simulator-and-evidence",
+      "size_in_bytes": 106867290,
+      "digest": "sha256:c96da8efe5c2c96cf646e4e360b7baac10c00a3520f73691ebeb2ca324006f52",
+      "created_at": "2026-10-02T05:53:57Z",
+      "expires_at": "2026-10-16T05:53:54Z",
+      "archive_download_url": "https://api.github.com/repos/kuoforever/ai-workspace-mvp/actions/artifacts/11210984779/zip"
+    }
+  },
+  "packages": [
+    {
+      "platform": "android",
+      "file": "AIWorkspace-Android-debug-632f03f.apk",
+      "size_bytes": 10270375,
+      "sha256": "ad1e0af67cdece14cd11a23d1c3a6e8fd8400dfa7c53d33055bbe91994fbd505",
+      "kind": "CI debug-signed APK",
+      "artifact_member": "android/app/build/outputs/apk/debug/app-debug.apk"
+    },
+    {
+      "platform": "ios",
+      "file": "AIWorkspace-iOS-release-simulator-632f03f.zip",
+      "size_bytes": 7166934,
+      "sha256": "bed822352c3a1e049fc76783967c5af493ea56a8c08b8e5981dc82365f351901",
+      "kind": "Release simulator .app archive, arm64/x86_64; testability enabled; not an IPA",
+      "artifact_member": "performance/AIWorkspace-release-simulator.app.zip"
+    }
+  ],
+  "evidence_files": [
+    {
+      "file": "android-device-tests.xml",
+      "size_bytes": 1187,
+      "sha256": "f7ea26fe8989213e049673b81dade44a6eb337c27f55caf05e12514276e4fec2"
+    },
+    {
+      "file": "android-fixture.json",
+      "size_bytes": 1128,
+      "sha256": "c4a5907f9e75793851a367392d8caf6fd9cb39ca8eb2d40a021ef08584dc46de"
+    },
+    {
+      "file": "android-native-metrics.json",
+      "size_bytes": 57050,
+      "sha256": "85729d2d998d28e36709bb3f178f1101cd6a5022353c227da3ee525015170aa8"
+    },
+    {
+      "file": "android-performance-summary.json",
+      "size_bytes": 27682,
+      "sha256": "01e91ef56dc0deb00113ac7187ca6287a282fbc7672e7a98b8f2c2fac28b085f"
+    },
+    {
+      "file": "android-performance-tests.xml",
+      "size_bytes": 828,
+      "sha256": "38abc6efada3ffe8669eefe2ee322501d6c03c30e90bb5a95932253537a31487"
+    },
+    {
+      "file": "android-process-verification.json",
+      "size_bytes": 667,
+      "sha256": "078a44695ee3dbd2cf9657d8bca9761cc4cee3c1e8271f7c8a155838919df9d2"
+    },
+    {
+      "file": "android-trace-summary.json",
+      "size_bytes": 51618,
+      "sha256": "89107cc9cb3d67f54e04cab02e4bb543b2c8846fa467c0dda93133c47a2247be"
+    },
+    {
+      "file": "android-unit-summary.json",
+      "size_bytes": 221,
+      "sha256": "231f2372115b7b165f6285e6d91c13b07cd80641df76fcaefe7f7923623c8e94"
+    },
+    {
+      "file": "backend-test-summary.json",
+      "size_bytes": 386,
+      "sha256": "74a125d6a62cc7b537933e8b0b419c6c8cabfba20325c647b9e7d66481ef6662"
+    },
+    {
+      "file": "ios-app-data-state.txt",
+      "size_bytes": 40,
+      "sha256": "20f598f72a039589eacc820beb1ea8c700b4edbd919f31da1d80352de68bb870"
+    },
+    {
+      "file": "ios-architectures.txt",
+      "size_bytes": 13,
+      "sha256": "9cb483fd3739db2602d4c5bf672f4af954dc6dad82b36e8642b034af58f11c11"
+    },
+    {
+      "file": "ios-compact-summary.json",
+      "size_bytes": 1000,
+      "sha256": "8a8b79b3eff744d9a1b2e7ab22fc9c0069acfb0f064581684f861ee594ffc0e0"
+    },
+    {
+      "file": "ios-fixture.json",
+      "size_bytes": 1128,
+      "sha256": "d8ca7e2e39c93628ed0894c0bbffca294d46153d9217d5358e761977596e0b51"
+    },
+    {
+      "file": "ios-functional-summary.json",
+      "size_bytes": 969,
+      "sha256": "dce25061fc854f156389925c771bf146d34c845d549a53c1ac925fcf515ad52a"
+    },
+    {
+      "file": "ios-native-metrics.json",
+      "size_bytes": 7195,
+      "sha256": "d7bed5477c93dc2c9ec08c3d3356842cd905d693466d2f4833047b56c476ccfe"
+    },
+    {
+      "file": "ios-performance-build-settings.txt",
+      "size_bytes": 37303,
+      "sha256": "5c98736643245ca3d3fb2cbe5e0da92a73f53d03112a14ce70b1e4a4d584d925"
+    },
+    {
+      "file": "ios-performance-summary.json",
+      "size_bytes": 4666,
+      "sha256": "776be6da0c6767bc87fc8fd27ecb4ef892b66c12e76985b3f5b7522563bf6f89"
+    },
+    {
+      "file": "ios-performance-tests.json",
+      "size_bytes": 1067,
+      "sha256": "c026e2dba0388511ddf6ebe09df7d758f769b6af847537d64502c503f3002555"
+    },
+    {
+      "file": "ios-tablet-summary.json",
+      "size_bytes": 990,
+      "sha256": "df001441a97163cfc9eeabbf75890906970e4dfa8d5f00c82041e9e329becec0"
+    },
+    {
+      "file": "README.md",
+      "size_bytes": 6271,
+      "sha256": "f736eb4ec6240745fa12c37e3e94784ed05aa82b31e92d70f30bb4d2b5e54ae9"
+    }
+  ],
+  "limits": [
+    "Descriptive baseline, not a performance acceptance threshold or evidence of optimization benefit",
+    "Shared CI hosts and Android software rendering; no real-device energy, thermal or stability evidence",
+    "Different platform startup definitions; do not rank platforms",
+    "iOS pipeline excludes system picker, keyboard and full UI; cache reads include filesystem caching",
+    "CI artifact expiry is recorded above; these hashes identify the captured files"
+  ]
+}
