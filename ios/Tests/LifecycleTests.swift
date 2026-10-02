@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor final class LifecycleTests: XCTestCase {
     private final class DelayedAPI: WorkspaceAPI {
-        var continuation: CheckedContinuation<Data, Never>?
+        var continuation: CheckedContinuation<Data, Error>?
         var calls: [(String, Data?, String?)] = []
         var delay = true
         let response: Data
@@ -11,10 +11,11 @@ import XCTest
         func request(_ path: String, body: Data?, key: String?) async throws -> Data {
             calls.append((path, body, key))
             if path == "/catalog" { return Data("{\"checks\":[]}".utf8) }
-            if delay { return await withCheckedContinuation { continuation = $0 } }
+            if delay { return try await withCheckedThrowingContinuation { continuation = $0 } }
             return response
         }
         func finish() { continuation?.resume(returning: response); continuation = nil }
+        func fail(_ error: Error) { continuation?.resume(throwing: error); continuation = nil }
     }
 
     private func waitForRequest(_ api: DelayedAPI) async throws {
@@ -71,5 +72,35 @@ import XCTest
         XCTAssertEqual(api.calls.count, 2)
         XCTAssertTrue(api.calls.allSatisfy { $0.1 == original.body && $0.2 == original.key })
         XCTAssertNil(try store.pending())
+    }
+
+    func testCancelledRequestsDiscardLateConnectionErrors() async throws {
+        for failure: Error in [APIError(status: 503, message: "late failure"), URLError(.networkConnectionLost)] {
+            let api = DelayedAPI(response: Data())
+            var updates: [ConnectionState] = []
+            let observed = ObservedWorkspaceAPI(base: api) { updates.append($0) }
+            let request = Task { try await observed.get("/reviews") }
+            try await waitForRequest(api)
+            request.cancel(); api.fail(failure)
+            do { _ = try await request.value; XCTFail("Cancellation must take precedence") }
+            catch is CancellationError { }
+            XCTAssertTrue(updates.isEmpty)
+        }
+    }
+
+    func testCancelledSubmissionDoesNotClearAReceiptOnLateRejection() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try DeviceStore(root: root)
+        let api = DelayedAPI(response: Data())
+        let journal = try await CommandJournal(store: store, api: api)
+        let original = PendingCommand(key: "keep-late", path: "/reviews", body: Data("original".utf8), kind: "create")
+        let submission = Task { try await journal.send(original) }
+        try await waitForRequest(api)
+        submission.cancel(); api.fail(APIError(status: 409, message: "late conflict"))
+        do { _ = try await submission.value; XCTFail("Cancellation must take precedence") }
+        catch is CancellationError { }
+        XCTAssertEqual(journal.pending, original)
+        XCTAssertEqual(try store.pending(), original)
     }
 }

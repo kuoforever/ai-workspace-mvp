@@ -111,6 +111,28 @@ class CommandJournalTest {
         assertNull(store.pending())
     }
 
+    @Test fun cancelledSubmissionKeepsReceiptDespiteALateConflict() = runBlocking {
+        val store = MemoryStore()
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val api = object : WorkspaceApi {
+            override suspend fun request(path: String, body: String?, key: String?): String {
+                started.complete(Unit)
+                return withContext(NonCancellable) {
+                    release.await()
+                    throw ApiFailure(409, "late conflict")
+                }
+            }
+        }
+        val journal = CommandJournal(store, api)
+        val submission = launch { journal.send(command) }
+        withTimeout(3000) { started.await() }
+        submission.cancel(); release.complete(Unit); submission.join()
+        assertTrue(submission.isCancelled)
+        assertEquals(command, journal.pending)
+        assertEquals(command, store.pending())
+    }
+
     @Test fun malformedSuccessResponseKeepsRetryIdentity() = runBlocking {
         val store = MemoryStore()
         val api = object : WorkspaceApi {

@@ -31,9 +31,11 @@ enum ConnectionState: String {
             update(.connected)
             return result
         } catch let failure as APIError {
+            try Task.checkCancellation()
             update(failure.status >= 500 ? .unavailable : .connected)
             throw failure
         } catch let failure as URLError {
+            try Task.checkCancellation()
             if failure.code != .cancelled { update(.offline) }
             throw failure
         }

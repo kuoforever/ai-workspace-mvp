@@ -29,6 +29,7 @@ import Foundation
         let response: Data
         do { response = try await api.request(command.path, body: command.body, key: command.key) }
         catch let error as APIError {
+            try Task.checkCancellation()
             if (400..<500).contains(error.status) {
                 try await disk.run { try store.savePending(nil) }
                 pending = nil

@@ -60,9 +60,11 @@ class WorkspaceViewModel(
                 ui = ui.copy(connection = Connection.CONNECTED)
                 return result
             } catch (failure: ApiFailure) {
+                currentCoroutineContext().ensureActive()
                 ui = ui.copy(connection = if (failure.status >= 500) Connection.UNAVAILABLE else Connection.CONNECTED)
                 throw failure
             } catch (failure: IOException) {
+                currentCoroutineContext().ensureActive()
                 ui = ui.copy(connection = Connection.OFFLINE)
                 throw failure
             }

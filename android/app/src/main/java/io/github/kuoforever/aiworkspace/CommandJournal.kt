@@ -17,6 +17,7 @@ class CommandJournal(private val store: CommandStore, private val api: Workspace
         val response = try {
             api.request(command.path, command.body, command.key)
         } catch (failure: ApiFailure) {
+            currentCoroutineContext().ensureActive()
             // A concrete 4xx rejection did not accept this command. Drafts live separately.
             if (failure.status in 400..499) {
                 disk.run { store.savePending(null) }

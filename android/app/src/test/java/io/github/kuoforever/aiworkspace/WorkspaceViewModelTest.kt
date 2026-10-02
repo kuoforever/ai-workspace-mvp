@@ -238,6 +238,30 @@ class WorkspaceViewModelTest {
         assertEquals("completed", vm.ui.review?.status)
     }
 
+    @Test fun cancelledPollingDoesNotPublishALateConnectionError() {
+        for (failure in listOf(ApiFailure(503, "late failure"), IOException("late disconnect"))) {
+            val gate = CompletableDeferred<Unit>()
+            val response = ReviewSnapshot("late-error", 1, "waiting_model", ReviewInput(), emptyMap())
+            val api = object : WorkspaceApi {
+                override suspend fun request(path: String, body: String?, key: String?): String = when {
+                    path == "/catalog" -> "{\"checks\":[]}"
+                    body != null -> wireJson.encodeToString(response)
+                    path == "/reviews/late-error" -> kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                        gate.await(); throw failure
+                    }
+                    else -> "[]"
+                }
+            }
+            val vm = WorkspaceViewModel(api, Store(), DiskExecutor(dispatcher))
+            vm.createPage(); vm.example(); vm.create(); vm.poll(); vm.pausePolling()
+            gate.complete(Unit)
+            assertFalse(vm.ui.busy)
+            assertNull(vm.ui.error)
+            assertEquals(Connection.CONNECTED, vm.ui.connection)
+            assertEquals("waiting_model", vm.ui.review?.status)
+        }
+    }
+
     @Test fun pausingPollingDoesNotCancelAManualSubmission() {
         val gate = CompletableDeferred<String>()
         val api = object : WorkspaceApi {
