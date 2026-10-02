@@ -1,18 +1,18 @@
 import Foundation
 
-struct CheckCard: Codable, Identifiable { let id: String; let question: String }
-struct Catalog: Decodable { let checks: [CheckCard] }
-struct ServerConfig: Decodable { let modes: [String] }
+struct CheckCard: Codable, Identifiable, Sendable { let id: String; let question: String }
+struct Catalog: Decodable, Sendable { let checks: [CheckCard] }
+struct ServerConfig: Decodable, Sendable { let modes: [String] }
 func assistantPrompt(_ id: String) -> String {
     "请通过 swe-workspace 读取评审 \(id) 的最新上下文，按选定检查项继续评审。需要澄清时提交问题；材料充分时提交带原文引用的报告。"
 }
-struct ReviewSummary: Codable, Identifiable {
+struct ReviewSummary: Codable, Identifiable, Sendable {
     let id: String
     let title: String
     let status: String
     let mode: String
 }
-struct ReviewInput: Codable, Equatable {
+struct ReviewInput: Codable, Equatable, Sendable {
     var title = ""
     var design = ""
     var mode = "mcp"
@@ -23,13 +23,13 @@ struct ReviewInput: Codable, Equatable {
         case checkIDs = "check_ids", recordID = "workbench_record_id"
     }
 }
-struct Source: Codable { let title: String; let text: String; let path: String; let sha256: String }
-struct Citation: Codable {
+struct Source: Codable, Sendable { let title: String; let text: String; let path: String; let sha256: String }
+struct Citation: Codable, Sendable {
     let sourceID: String
     let quote: String
     enum CodingKeys: String, CodingKey { case sourceID = "source_id", quote }
 }
-struct Finding: Codable, Identifiable {
+struct Finding: Codable, Identifiable, Sendable {
     let checkID: String
     let verdict: String
     let explanation: String
@@ -40,9 +40,9 @@ struct Finding: Codable, Identifiable {
         case checkID = "check_id", verdict, explanation, recommendation, citations
     }
 }
-struct Report: Codable { let summary: String; let findings: [Finding] }
-struct Question: Codable, Identifiable { let id: String; let text: String }
-struct ReviewSnapshot: Codable {
+struct Report: Codable, Sendable { let summary: String; let findings: [Finding] }
+struct Question: Codable, Identifiable, Sendable { let id: String; let text: String }
+struct ReviewSnapshot: Codable, Sendable {
     let id: String
     let revision: Int
     let status: String
@@ -53,8 +53,8 @@ struct ReviewSnapshot: Codable {
     let report: Report?
     let error: String?
 }
-struct AnswerCommand: Encodable { let revision: Int; let answers: [String: String] }
-struct PendingCommand: Codable, Equatable {
+struct AnswerCommand: Encodable, Sendable { let revision: Int; let answers: [String: String] }
+struct PendingCommand: Codable, Equatable, Sendable {
     let key: String
     let path: String
     let body: Data

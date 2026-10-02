@@ -8,8 +8,8 @@ import androidx.lifecycle.viewModelScope
 import java.io.IOException
 import java.net.URLEncoder
 import java.util.UUID
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 
 enum class Page { HOME, CREATE, DETAIL, SOURCE, EXPORT }
@@ -17,6 +17,8 @@ enum class Page { HOME, CREATE, DETAIL, SOURCE, EXPORT }
 data class WorkspaceUi(
     val page: Page = Page.HOME,
     val rows: List<ReviewSummary> = emptyList(),
+    val savedRows: List<ReviewSummary> = emptyList(),
+    val savedOnly: Boolean = false,
     val checks: List<CheckCard> = emptyList(),
     val draft: ReviewInput = ReviewInput(),
     val review: ReviewSnapshot? = null,
@@ -26,15 +28,22 @@ data class WorkspaceUi(
     val quote: String = "",
     val exported: String = "",
     val busy: Boolean = false,
+    val loadingLocal: Boolean = true,
+    val saveState: SaveState = SaveState.SAVED,
     val cached: Boolean = true,
     val error: String? = null,
     val pending: PendingCommand? = null,
     val startupError: String? = null,
     val connection: Connection = Connection.UNKNOWN,
-) { val editable: Boolean get() = !busy && pending == null && startupError == null }
+) { val editable: Boolean get() = !busy && !loadingLocal && pending == null && startupError == null }
 
-class WorkspaceViewModel(private val api: WorkspaceApi, private val store: WorkspaceStore) : ViewModel() {
+class WorkspaceViewModel(
+    private val api: WorkspaceApi,
+    private val store: WorkspaceStore,
+    private val disk: DiskExecutor = DiskExecutor(),
+) : ViewModel() {
     private var journal: CommandJournal? = null
+    private val edits = EditPersistence(viewModelScope, disk) { state -> ui = ui.copy(saveState = state) }
     private val observedApi = object : WorkspaceApi {
         override suspend fun request(path: String, body: String?, key: String?): String {
             try {
@@ -57,20 +66,28 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Works
 
     fun reloadLocalData() {
         if (ui.busy) return
-        try {
-            val restored = CommandJournal(store, observedApi)
-            val state = WorkspaceUi(rows = store.cachedList(), draft = store.draft(),
-                review = store.cachedReview(), pending = restored.pending)
-            journal = restored
-            ui = state
-            refresh()
-        } catch (_: Exception) {
-            ui = ui.copy(startupError = "本机记录无法读取，写入已暂停。请保留应用数据，修复存储问题后重新读取。")
+        ui = ui.copy(busy = true, loadingLocal = true)
+        viewModelScope.launch {
+            try {
+                val restored = disk.run { CommandJournal(store, observedApi, disk) }
+                val local = disk.run {
+                    WorkspaceUi(rows = store.cachedList(), savedRows = store.cachedReviews().map { it.summary() },
+                        draft = store.draft(), review = store.cachedReview(), pending = restored.pending,
+                        loadingLocal = false)
+                }
+                journal = restored
+                ui = local
+                refresh()
+            } catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) {
+                ui = ui.copy(busy = false, loadingLocal = false,
+                    startupError = "本机记录无法读取，写入已暂停。请保留应用数据，修复存储问题后重新读取。")
+            }
         }
     }
 
     private fun operation(block: suspend () -> Unit) {
-        if (ui.busy || ui.startupError != null) return
+        if (ui.busy || ui.loadingLocal || ui.startupError != null) return
         ui = ui.copy(busy = true, error = null)
         viewModelScope.launch {
             try { block() }
@@ -78,10 +95,10 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Works
             catch (_: LocalDataFailure) { ui = ui.copy(error = "本机记录未能保存。输入和原提交已保留，请检查设备存储后重试。") }
             catch (failure: ApiFailure) {
                 ui = ui.copy(error = if (failure.status == 409)
-                    "${failure.message}。输入草稿已保留，请刷新核对后再提交。"
+                    failure.message + "。输入草稿已保留，请刷新核对后再提交。"
                     else failure.message ?: "提交被拒绝，草稿已保留。")
             } catch (_: IOException) {
-                ui = ui.copy(cached = true, error = "未能连接工作台。请确认电脑服务与设备转发已启动；草稿仍保存在本机。")
+                ui = ui.copy(cached = true, error = "未能连接工作台。请确认电脑服务与设备转发已启动；草稿仍保留在设备。")
             } catch (failure: Exception) {
                 ui = ui.copy(error = failure.message ?: "暂时无法完成，请稍后重试。")
             } finally { ui = ui.copy(busy = false, pending = journal?.pending) }
@@ -89,16 +106,27 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Works
     }
 
     fun refresh() = operation {
+        if (ui.page == Page.HOME && ui.savedOnly) {
+            val rows = disk.run { store.cachedReviews().map { it.summary() } }
+            ui = ui.copy(savedRows = rows)
+            return@operation
+        }
         if (ui.checks.isEmpty()) {
             ui = ui.copy(checks = wireJson.decodeFromString<Catalog>(observedApi.request("/catalog")).checks)
         }
         if (ui.page == Page.DETAIL && ui.selectedId != null) {
-            show(wireJson.decodeFromString(observedApi.request("/reviews/${segment(ui.selectedId!!)}")))
+            show(wireJson.decodeFromString(observedApi.request("/reviews/" + segment(ui.selectedId!!))))
         } else {
             val rows = wireJson.decodeFromString<List<ReviewSummary>>(observedApi.request("/reviews"))
-            store.saveList(rows)
+            disk.run { store.saveList(rows) }
             ui = ui.copy(rows = rows, cached = false)
         }
+    }
+
+    fun showSaved(value: Boolean) {
+        if (ui.busy) return
+        ui = ui.copy(savedOnly = value, error = null)
+        if (value) refresh()
     }
 
     fun checkConnection() = operation {
@@ -122,14 +150,23 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Works
 
     fun edit(draft: ReviewInput) {
         if (!ui.editable) return
-        try { store.saveDraft(draft); ui = ui.copy(draft = draft) }
-        catch (_: LocalDataFailure) { ui = ui.copy(draft = draft, error = "草稿未能保存到设备，请检查存储空间；当前输入仍保留在页面。") }
+        ui = ui.copy(draft = draft)
+        edits.enqueue("draft") { store.saveDraft(draft) }
+    }
+
+    fun importDocument(read: suspend () -> ImportedDocument) = operation {
+        check(ui.pending == null) { "请先确认上次提交。" }
+        val imported = try { read() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (failure: IOException) { throw IllegalArgumentException("文件无法读取，原草稿已保留。", failure) }
+        val title = if (ui.draft.title.isBlank()) imported.name.substringBeforeLast('.').takeScalars(120) else ui.draft.title
+        val draft = ui.draft.copy(title = title, design = imported.text)
+        ui = ui.copy(draft = draft)
+        edits.enqueue("draft") { store.saveDraft(draft) }
     }
 
     fun example() = edit(ReviewInput(
-        title = "订单接口设计",
-        design = "订单使用请求键去重；支付超时后直接重试，尚未设计结果查询。",
-        mode = "scripted",
+        title = "订单接口设计", design = "订单使用请求键去重；支付超时后直接重试，尚未设计结果查询。", mode = "scripted",
     ))
 
     fun toggleCheck(id: String) {
@@ -138,9 +175,13 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Works
         else if (chosen.size < 8) edit(ui.draft.copy(checkIds = chosen + id))
     }
 
+    fun retrySave() = operation { edits.flush() }
+
     fun create() {
+        if (!ui.editable) return
         val draft = ui.draft.copy(title = ui.draft.title.trim())
-        if (draft.title.isBlank() || draft.title.length > 120 || draft.design.length !in 10..8000 || draft.checkIds.size !in 1..8) {
+        if (draft.title.isBlank() || draft.title.codePointCount(0, draft.title.length) > 120 ||
+            draft.design.codePointCount(0, draft.design.length) !in 10..8000 || draft.checkIds.size !in 1..8) {
             ui = ui.copy(error = "请填写名称、10–8000 字符的设计，并选择 1–8 项检查。")
             return
         }
@@ -148,57 +189,58 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Works
     }
 
     fun editAnswer(id: String, text: String) {
-        if (!ui.editable || text.length > 2000) return
+        if (!ui.editable || text.codePointCount(0, text.length) > 2000) return
         val reviewId = ui.selectedId ?: return
         val answers = ui.answers + (id to text)
-        try { store.saveAnswers(reviewId, answers); ui = ui.copy(answers = answers) }
-        catch (_: LocalDataFailure) { ui = ui.copy(answers = answers, error = "回答未能保存到设备，请检查存储空间；当前输入仍保留在页面。") }
+        ui = ui.copy(answers = answers)
+        edits.enqueue("answers:" + reviewId) { store.saveAnswers(reviewId, answers) }
     }
 
     fun answer() {
+        if (!ui.editable) return
         val review = ui.review ?: return
         val answers = review.questions.associate { it.id to ui.answers[it.id].orEmpty() }
-        if (answers.isEmpty() || answers.values.any { it.isBlank() || it.length > 2000 }) {
+        if (answers.isEmpty() || answers.values.any { it.isBlank() || it.codePointCount(0, it.length) > 2000 }) {
             ui = ui.copy(error = "请回答每个问题；不确定时可填写‘暂不确定’。")
             return
         }
-        send(PendingCommand(
-            UUID.randomUUID().toString(), "/reviews/${segment(review.id)}/answers",
-            wireJson.encodeToString(AnswerCommand(review.revision, answers)), "answer", review.id,
-        ))
+        send(PendingCommand(UUID.randomUUID().toString(), "/reviews/" + segment(review.id) + "/answers",
+            wireJson.encodeToString(AnswerCommand(review.revision, answers)), "answer", review.id))
     }
 
     fun retry() = send(null)
 
     private fun send(command: PendingCommand?) = operation {
+        edits.flush()
         val journal = requireNotNull(journal)
         val action = journal.pending ?: requireNotNull(command)
         journal.send(command) { review ->
-            store.saveReview(review)
-            if (action.kind == "create") {
-                store.saveDraft(ReviewInput())
-                ui = ui.copy(draft = ReviewInput())
-            } else if (action.reviewId != null) store.saveAnswers(action.reviewId, emptyMap())
+            disk.run {
+                store.saveReview(review)
+                if (action.kind == "create") store.saveDraft(ReviewInput())
+                else if (action.reviewId != null) store.saveAnswers(action.reviewId, emptyMap())
+            }
+            if (action.kind == "create") ui = ui.copy(draft = ReviewInput())
             show(review)
         }
     }
 
-    fun open(id: String) {
-        if (ui.busy) return
-        try {
-            val cached = store.cachedReview()?.takeIf { it.id == id }
-            ui = ui.copy(page = Page.DETAIL, selectedId = id, review = cached,
-                answers = store.answers(id), cached = cached != null)
-            refresh()
-        } catch (_: LocalDataFailure) {
-            ui = ui.copy(error = "本机回答或缓存无法读取，请保留应用数据后重试。")
+    fun open(id: String) = operation {
+        val cached = disk.run { store.cachedReview(id) }
+        val answers = disk.run { store.answers(id) }
+        ui = ui.copy(page = Page.DETAIL, selectedId = id, review = cached, answers = answers, cached = true)
+        if (!ui.savedOnly || cached == null) {
+            show(wireJson.decodeFromString(observedApi.request("/reviews/" + segment(id))))
         }
     }
 
-    private fun show(review: ReviewSnapshot) {
-        store.saveReview(review)
+    private suspend fun show(review: ReviewSnapshot) {
+        val local = disk.run {
+            store.saveReview(review)
+            store.answers(review.id) to store.cachedReviews().map { it.summary() }
+        }
         ui = ui.copy(page = Page.DETAIL, selectedId = review.id, review = review,
-            answers = store.answers(review.id), cached = false)
+            answers = local.first, savedRows = local.second, cached = false)
     }
 
     fun source(citation: Citation) {
@@ -206,10 +248,9 @@ class WorkspaceViewModel(private val api: WorkspaceApi, private val store: Works
         ui = ui.copy(page = Page.SOURCE, source = source, quote = citation.quote)
     }
 
-    fun export() = operation {
-        val id = ui.selectedId ?: return@operation
-        val text = observedApi.request("/reviews/${segment(id)}/export?format=markdown")
-        ui = ui.copy(page = Page.EXPORT, exported = text)
+    fun export() {
+        val review = ui.review ?: return
+        ui = ui.copy(page = Page.EXPORT, exported = review.markdown())
     }
 
     private fun segment(value: String) = URLEncoder.encode(value, "UTF-8")

@@ -24,18 +24,25 @@ class WorkspaceViewModelTest {
         var brokenJournal = false
         var brokenCache = false
         var failSave = false
+        var failDraft = false
+        val reports = linkedMapOf<String, ReviewSnapshot>()
         override fun pending(): PendingCommand? {
             if (brokenJournal) throw LocalDataFailure(IOException("corrupt journal"))
             return command
         }
         override fun savePending(command: PendingCommand?) { this.command = command }
         override fun draft() = input
-        override fun saveDraft(draft: ReviewInput) { input = draft }
+        override fun saveDraft(draft: ReviewInput) {
+            if (failDraft) throw LocalDataFailure(IOException("disk full"))
+            input = draft
+        }
         override fun answers(id: String) = emptyMap<String, String>()
         override fun saveAnswers(id: String, answers: Map<String, String>) { }
-        override fun cachedReview(): ReviewSnapshot? = null
+        override fun cachedReview(): ReviewSnapshot? = reports.values.lastOrNull()
+        override fun cachedReviews() = reports.values.toList()
         override fun saveReview(review: ReviewSnapshot) {
             if (failSave) throw LocalDataFailure(IOException("disk full"))
+            reports[review.id] = review
         }
         override fun cachedList(): List<ReviewSummary> {
             if (brokenCache) throw LocalDataFailure(IOException("corrupt cache"))
@@ -65,7 +72,7 @@ class WorkspaceViewModelTest {
             command = PendingCommand("keep", "/reviews", "original", "create")
         }
         val api = API()
-        val vm = WorkspaceViewModel(api, store)
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
         assertNotNull(vm.ui.startupError)
         assertFalse(vm.ui.editable)
         vm.createPage(); vm.checkConnection()
@@ -81,7 +88,7 @@ class WorkspaceViewModelTest {
 
     @Test fun corruptCacheShowsRecoveryInsteadOfCrashing() {
         val api = API()
-        val vm = WorkspaceViewModel(api, Store().apply { brokenCache = true })
+        val vm = WorkspaceViewModel(api, Store().apply { brokenCache = true }, DiskExecutor(dispatcher))
         assertNotNull(vm.ui.startupError)
         assertTrue(api.calls.isEmpty())
     }
@@ -89,7 +96,7 @@ class WorkspaceViewModelTest {
     @Test fun checkingConnectionDoesNotResendPendingWork() {
         val api = API().apply { offline = true }
         val store = Store().apply { command = PendingCommand("keep", "/reviews", "original", "create") }
-        val vm = WorkspaceViewModel(api, store)
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
         assertEquals(Connection.OFFLINE, vm.ui.connection)
         api.offline = false
         vm.checkConnection()
@@ -104,7 +111,7 @@ class WorkspaceViewModelTest {
     @Test fun localResponseSaveFailureKeepsOriginalRequestForRetry() = kotlinx.coroutines.test.runTest {
         val api = API()
         val store = Store().apply { failSave = true }
-        val vm = WorkspaceViewModel(api, store)
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
         vm.edit(ReviewInput(title = "Orders", design = "Retry an order after timeout."))
         vm.create()
         // The journal performs disk work on IO; wait for the view model operation.
@@ -120,5 +127,53 @@ class WorkspaceViewModelTest {
         assertEquals(writes[0], writes[1])
         assertNull(vm.ui.pending)
         assertEquals("one-review", vm.ui.review?.id)
+    }
+
+    @Test fun failedDraftSaveKeepsInputAndBlocksNetworkSubmission() {
+        val api = API()
+        val store = Store().apply { failDraft = true }
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
+        val input = ReviewInput(title = "Latest input", design = "Query payment status before retrying.")
+        vm.edit(input)
+        assertEquals(input, vm.ui.draft)
+        vm.create()
+        assertEquals(SaveState.FAILED, vm.ui.saveState)
+        assertEquals(input, vm.ui.draft)
+        assertTrue(api.calls.all { it.second == null })
+        store.failDraft = false
+        vm.retrySave()
+        assertEquals(SaveState.SAVED, vm.ui.saveState)
+        assertEquals(input, store.input)
+    }
+
+    @Test fun importedDraftAndOfflineReportsDoNotDependOnNetwork() {
+        val store = Store()
+        listOf("first", "second").forEach { id ->
+            store.reports[id] = ReviewSnapshot(id, 3, "completed",
+                ReviewInput(title = id, design = "Query payment status before retrying."),
+                mapOf("input" to Source("Design", "Query payment status", "input.txt", "digest")),
+                report = Report("Report " + id, listOf(Finding("CON-01", "risk", "reason", "advice",
+                    listOf(Citation("input", "payment status"))))))
+        }
+        val api = API().apply { offline = true }
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
+        vm.createPage()
+        vm.importDocument { ImportedDocument("design.md", "A newly imported order design.") }
+        vm.retrySave()
+        assertEquals("design", store.input.title)
+        assertEquals("A newly imported order design.", store.input.design)
+        val calls = api.calls.size
+        vm.back(); vm.showSaved(true)
+        for (id in listOf("first", "second")) {
+            vm.open(id)
+            assertEquals(id, vm.ui.review?.id)
+            assertTrue(vm.ui.cached)
+            vm.source(Citation("input", "payment status"))
+            assertEquals("Query payment status", vm.ui.source?.text)
+            vm.export()
+            assertTrue(vm.ui.exported.contains("Report " + id) && vm.ui.exported.contains("> payment status"))
+        }
+        // Going back before selecting the saved library explicitly refreshes once.
+        assertEquals(calls + 1, api.calls.size)
     }
 }
