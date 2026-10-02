@@ -27,7 +27,9 @@ class LocalWorkspaceApi internal constructor(
     private val client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(5, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS)
         .callTimeout(20, TimeUnit.SECONDS).followRedirects(false).followSslRedirects(false)
-        .retryOnConnectionFailure(false).build(),
+        // Recovery of a stale pooled socket resends the exact body/key. The
+        // backend journal makes that transport recovery idempotent.
+        .retryOnConnectionFailure(true).build(),
     private val endpoint: HttpUrl = "http://127.0.0.1:8765/api".toHttpUrl(),
 ) : WorkspaceApi {
     init { require(endpoint.scheme == "http" && endpoint.host in setOf("127.0.0.1", "localhost", "::1")) }

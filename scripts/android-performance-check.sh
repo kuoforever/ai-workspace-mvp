@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+test "${GITHUB_ACTIONS:-}" = true
+test "$(adb shell getprop ro.kernel.qemu | tr -d '\r')" = 1
 mkdir -p android-evidence/performance
-if [ "${GITHUB_ACTIONS:-}" = true ]; then bash scripts/mobile-performance-service.sh android; fi
+bash scripts/mobile-performance-service.sh android
 .venv/bin/python scripts/mobile-performance-fixture.py --out android-evidence/performance/fixture.json
 # Only the isolated CI emulator is cleared; the benchmark target uses the local
 # debug key but is non-debuggable and otherwise inherits the optimized release.

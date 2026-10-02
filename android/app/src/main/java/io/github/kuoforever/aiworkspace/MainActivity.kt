@@ -269,7 +269,8 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
         item { OutlinedTextField(state.draft.design, { if (it.scalarCount() <= 8000) vm.edit(state.draft.copy(design = it)) },
             enabled = enabled, label = { Text("设计材料") }, supportingText = { Text("${state.draft.design.scalarCount()}/8000 · " + state.saveState.label) },
             modifier = Modifier.fillMaxWidth().bringIntoViewRequester(designRequester)
-                .onFocusChanged { designFocused = it.isFocused }.testTag("design"), minLines = if (compactEditor) 2 else 5) }
+                .onFocusChanged { designFocused = it.isFocused }.testTag("design"),
+            minLines = if (compactEditor) 2 else 5, maxLines = if (compactEditor) 8 else 10) }
         item {
             Text("检查范围 · ${state.draft.checkIds.size}/8", fontWeight = FontWeight.SemiBold)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -329,7 +330,8 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
                 Text(question.text, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(state.answers[question.id].orEmpty(), { vm.editAnswer(question.id, it) },
-                    label = { Text("你的回答") }, enabled = enabled, minLines = if (compactEditor) 2 else 3,
+                    label = { Text("你的回答") }, enabled = enabled,
+                    minLines = if (compactEditor) 2 else 3, maxLines = 8,
                     modifier = Modifier.fillMaxWidth().bringIntoViewRequester(requester)
                         .onFocusChanged { focused = it.isFocused }.testTag("answer:${question.id}"))
             }

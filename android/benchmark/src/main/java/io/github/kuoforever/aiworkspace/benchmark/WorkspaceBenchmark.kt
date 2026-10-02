@@ -25,7 +25,7 @@ class WorkspaceBenchmark {
             compilationMode = CompilationMode.Full(), iterations = 10, startupMode = StartupMode.COLD,
             setupBlock = { pressHome() }) {
             startActivityAndWait()
-            check(device.wait(Until.findObject(By.res("new-review")), 15000) != null)
+            check(device.wait(Until.findObject(By.res("new-review").enabled(true)), 15000) != null)
             check(device.wait(Until.gone(By.res("busy")), 15000))
         }
     }
@@ -35,15 +35,19 @@ class WorkspaceBenchmark {
             compilationMode = CompilationMode.Full(), iterations = 5,
             setupBlock = {
                 killProcess(); startActivityAndWait()
-                check(device.wait(Until.gone(By.res("busy")), 15000))
-                device.wait(Until.findObject(By.res("new-review")), 15000)!!.click()
-                check(device.wait(Until.findObject(By.res("design")), 15000) != null)
+                device.wait(Until.findObject(By.res("new-review").enabled(true)), 15000)!!.click()
+                check(device.wait(Until.findObject(By.res("design").enabled(true)), 15000) != null)
             }) {
-            val field = device.findObject(By.res("design"))
             for (character in listOf("a", "b", "c")) {
+                val field = device.findObject(By.res("design"))
                 field.text = character.repeat(8000)
+                device.waitForIdle()
+                // The keyboard can move the lazy header out of the viewport.
+                // Bring the save acknowledgement back into view after each paste.
+                device.findObject(By.res("create-list")).scroll(Direction.UP, 1.0f)
                 check(device.wait(Until.hasObject(By.res("save-state").text("输入已保存")), 15000))
             }
+            val field = device.findObject(By.res("design"))
             assertTrue(field.text.endsWith("c".repeat(100)))
         }
     }
@@ -53,6 +57,7 @@ class WorkspaceBenchmark {
             compilationMode = CompilationMode.Full(), iterations = 5,
             setupBlock = {
                 killProcess(); startActivityAndWait()
+                check(device.wait(Until.findObject(By.res("new-review").enabled(true)), 15000) != null)
                 check(device.wait(Until.gone(By.res("busy")), 15000))
                 check(device.wait(Until.findObject(By.res("home-list")), 15000) != null)
             }) {

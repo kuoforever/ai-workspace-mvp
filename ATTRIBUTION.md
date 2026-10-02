@@ -20,5 +20,7 @@
 - [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)：stdio MCP 适配。
 - [Gradle](https://github.com/gradle/gradle)：Android 构建与 Wrapper，保留上游 Apache-2.0 许可。
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen)：生成 Xcode 工程。
+- [OkHttp](https://square.github.io/okhttp/)：Android 异步 HTTP 与请求取消；MockWebServer 用于网络边界测试。
+- [AndroidX Benchmark](https://developer.android.com/jetpack/androidx/releases/benchmark)：Android 优化构建的启动与帧时长测量。
 
 Python 依赖版本见 [uv.lock](uv.lock)，移动端依赖见各端构建配置。第三方依赖和导入材料保留各自的许可与引用信息；本仓库尚未设置统一的开源许可。

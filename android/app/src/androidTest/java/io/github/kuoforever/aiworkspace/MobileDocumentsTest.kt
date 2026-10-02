@@ -31,10 +31,11 @@ class MobileDocumentsTest {
         }))
         try {
             requireNotNull(resolver.openOutputStream(uri)).use { it.write(text.toByteArray()) }
-            compose.waitUntil(30000) { compose.onAllNodesWithTag("busy").fetchSemanticsNodes().isEmpty() }
+            compose.waitForEnabled(hasTestTag("new-review"))
             compose.onNodeWithTag("home-list").performScrollToNode(hasTestTag("new-review"))
             compose.onNodeWithTag("new-review").performClick()
             compose.onNodeWithTag("create-list").performScrollToNode(hasTestTag("design"))
+            compose.waitForEnabled(hasTestTag("design"))
             compose.onNodeWithTag("design").performTextReplacement("")
             compose.onNodeWithTag("create-list").performScrollToNode(hasTestTag("import-document"))
             compose.onNodeWithTag("import-document").performClick()

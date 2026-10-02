@@ -19,7 +19,7 @@ import org.junit.Assert.*
 class WorkspaceApiTest {
     private val server = MockWebServer()
     private val client = OkHttpClient.Builder().followRedirects(false)
-        .retryOnConnectionFailure(false).callTimeout(20, TimeUnit.SECONDS).build()
+        .retryOnConnectionFailure(true).callTimeout(20, TimeUnit.SECONDS).build()
     private lateinit var api: LocalWorkspaceApi
     @Before fun setup() { server.start(); api = LocalWorkspaceApi(client, server.url("/api")) }
     @After fun teardown() {
@@ -46,6 +46,24 @@ class WorkspaceApiTest {
         job.cancelAndJoin()
         withTimeout(3000) { while (client.dispatcher.runningCallsCount() != 0) delay(10) }
         assertTrue(job.isCancelled)
+    }
+
+    @Test fun aLostPooledConnectionResendsOnlyTheOriginalBodyAndKey() = runBlocking {
+        server.enqueue(MockResponse().setBody("ready"))
+        assertEquals("ready", api.request("/reviews"))
+        server.takeRequest(3, TimeUnit.SECONDS)
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
+        server.enqueue(MockResponse().setBody("accepted"))
+        val body = "{\"design\":\"query before retry\"}"
+        assertEquals("accepted", api.request("/reviews", body, "same-command"))
+        val first = server.takeRequest(3, TimeUnit.SECONDS)!!
+        val recovered = server.takeRequest(3, TimeUnit.SECONDS)!!
+        assertEquals(first.path, recovered.path)
+        assertEquals("same-command", recovered.getHeader("Idempotency-Key"))
+        assertEquals(first.getHeader("Idempotency-Key"), recovered.getHeader("Idempotency-Key"))
+        assertEquals(body, first.body.readUtf8())
+        assertEquals(body, recovered.body.readUtf8())
+        assertEquals(3, server.requestCount)
     }
 
     @Test fun preservesHttpRejectionsAndDoesNotFollowRedirects() = runBlocking {

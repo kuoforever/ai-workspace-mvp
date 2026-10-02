@@ -73,3 +73,13 @@ bash scripts/ios-simulator-check.sh
 [界面适配结果与截图](../evidence/mobile/adaptation/README.md)
 
 [测试结果与截图](../evidence/ios/README.md) · [来源与依赖](../ATTRIBUTION.md)
+
+## 完整并发检查与性能基线
+
+项目开启 complete 并发检查，应用目标把 Swift 警告视为错误。生产存储通过单一串行队列访问；取消后到达的网络结果不会更新界面或清除待确认请求。
+
+功能回归后，CI 单独构建 Release 模拟器应用并关闭性能阶段的代码覆盖率。XCTest 对启动、8000 字文档导入/引用定位/导出、20 份完整报告缓存重载各保存 10 次测量；文档和缓存用例同时记录内存指标。启动用例通过 XCUITest 测量，文档与缓存用例测量原生处理管线，不包含键盘输入或完整页面交互。
+
+原始日志、原生指标、结果包、构建配置与双架构 Release 模拟器应用随 CI 产物保存。P50/P95 是本次样本的描述统计；没有设置来自真机的性能门槛，不作跨平台速度比较。
+
+[模拟器质量验证](../docs/mobile-quality.md)

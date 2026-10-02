@@ -30,9 +30,7 @@ class WorkspaceAdaptationTest {
     private fun shell(command: String): String = instrumentation.uiAutomation.executeShellCommand(command)
         .let { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).bufferedReader().use { reader -> reader.readText().trim() } }
 
-    private fun waitReady() {
-        compose.waitUntil(30000) { compose.onAllNodesWithTag("busy").fetchSemanticsNodes().isEmpty() }
-    }
+    private fun waitReady(tag: String) = compose.waitForEnabled(hasTestTag(tag))
 
     private fun show(tag: String) {
         compose.onNodeWithTag("create-list").performScrollToNode(hasTestTag(tag))
@@ -74,7 +72,7 @@ class WorkspaceAdaptationTest {
                 config.fontScale >= 1.9f && config.screenWidthDp <= 360 &&
                     (config.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
             }
-            waitReady()
+            waitReady("new-review")
             compose.onNodeWithTag("home-list").performScrollToNode(hasTestTag("new-review"))
             compose.onNodeWithTag("new-review").performClick()
             val title = "Layout ${UUID.randomUUID().toString().take(8)}"
@@ -98,20 +96,29 @@ class WorkspaceAdaptationTest {
                 compose.activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             }
             compose.waitUntil(15000) { compose.activity.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE }
-            waitReady()
             show("title")
+            waitReady("title")
             compose.onNodeWithTag("title").assertTextContains(title)
             show("design")
             compose.onNodeWithTag("design").assertTextContains(design)
             show("submit")
+            waitReady("submit")
             shot("07-landscape-large-text")
             compose.onNodeWithTag("submit").performClick()
-            compose.waitUntil(30000) { compose.onAllNodesWithTag("status").fetchSemanticsNodes().isNotEmpty() }
+            try {
+                compose.waitUntil(30000) { compose.onAllNodesWithTag("status").fetchSemanticsNodes().isNotEmpty() }
+            } catch (failure: Throwable) {
+                // Preserve the actual error/receipt at the top of the long form.
+                compose.onNodeWithTag("create-list").performScrollToIndex(0)
+                shot("failure-landscape-submit")
+                compose.onRoot().printToLog("WorkspaceFailure")
+                throw failure
+            }
             compose.onNodeWithTag("status").assertTextEquals("等待助手")
 
             shell("wm size 2048x2732")
             compose.waitUntil(15000) { compose.activity.resources.configuration.screenWidthDp > 840 }
-            waitReady()
+            compose.waitUntil(30000) { compose.onAllNodesWithTag("busy").fetchSemanticsNodes().isEmpty() }
             val panel = compose.onNodeWithTag("workspace-content").fetchSemanticsNode().boundsInRoot
             val density = compose.activity.resources.displayMetrics.density
             assertTrue("Wide windows must retain a readable content width", panel.width <= 840 * density + 1)

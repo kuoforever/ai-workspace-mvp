@@ -71,3 +71,19 @@ CI 还从应用进程外执行 `scripts/android-process-check.py`，验证强制
 [界面适配结果与截图](../evidence/mobile/adaptation/README.md)
 
 [测试结果与截图](../evidence/android/README.md) · [来源与依赖](../ATTRIBUTION.md)
+
+## 优化构建与性能基线
+
+Release 启用 R8 与资源缩减；benchmark 从 Release 继承优化设置，仅增加 profileable 和本机调试签名，保持 non-debuggable。CI 同时构建 Debug、Release 与 benchmark，保存混淆映射；Release APK 没有生产签名，benchmark APK 用于模拟器验证。
+
+独立 benchmark 模块使用 Macrobenchmark 1.3.4，固定 Full 编译模式：冷启动 10 次、8000 字文本批量替换及保存 5 次、20 条评审列表滚动 5 次。CI 启动独立后端、写入固定模拟资料，并仅在隔离模拟器清除该应用的数据；不会调用模型。原始 JSON 与 Perfetto 分析文件随 CI 产物保存。
+
+手动测量时准备隔离的服务与模拟器，在本目录执行：
+
+```powershell
+./gradlew.bat :benchmark:connectedBenchmarkAndroidTest "-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR"
+```
+
+EMULATOR 是模拟器运行时唯一显式放宽的设备限制；没有放宽 debuggable 或 profileable 检查。计时结果用于同一环境的后续比较，不代表真机速度，也不据此判定生产性能达标。
+
+[模拟器质量验证](../docs/mobile-quality.md)
