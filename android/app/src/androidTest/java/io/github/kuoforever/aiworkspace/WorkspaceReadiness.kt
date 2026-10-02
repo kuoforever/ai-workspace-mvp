@@ -1,6 +1,7 @@
 package io.github.kuoforever.aiworkspace
 
 import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.ComposeTestRule
 
 /** Network callbacks are outside Compose's idling resources. A visible cached
  * status does not mean the operation finished or its controls are editable. */
