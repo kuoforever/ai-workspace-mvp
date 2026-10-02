@@ -44,6 +44,7 @@ finish_recording
 trap - EXIT
 tail -100 ios-evidence/tests.log
 xcrun xcresulttool get test-results summary --path ios-evidence/Tests.xcresult >ios-evidence/test-summary.json
+.venv/bin/python -c 'import json; s=json.load(open("ios-evidence/test-summary.json")); print(json.dumps({k:s[k] for k in ("result", "passedTests", "failedTests", "skippedTests")}, ensure_ascii=False))'
 if [ "$test_exit" -ne 0 ]; then
   .venv/bin/python -c 'import json; print(json.dumps(json.load(open("ios-evidence/test-summary.json"))["testFailures"], ensure_ascii=False))'
 fi

@@ -14,11 +14,11 @@ if [ "${GITHUB_ACTIONS:-}" = true ]; then bash scripts/mobile-performance-servic
 .venv/bin/python scripts/mobile-performance-fixture.py --out ios-evidence/performance/fixture.json
 xcodebuild build-for-testing -configuration Release -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
     -destination "platform=iOS Simulator,id=$simulator_id" -derivedDataPath ios/build/performance \
-    CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES -enableCodeCoverage NO -parallel-testing-enabled NO \
+    CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES ENABLE_CODE_COVERAGE=NO -enableCodeCoverage NO -parallel-testing-enabled NO \
     >ios-evidence/performance/build.log 2>&1 || { tail -100 ios-evidence/performance/build.log; exit 1; }
 xcodebuild -configuration Release -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
     -destination "platform=iOS Simulator,id=$simulator_id" -derivedDataPath ios/build/performance \
-    CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES \
+    CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES ENABLE_CODE_COVERAGE=NO \
     -showBuildSettings >ios-evidence/performance/build-settings.txt
 lipo -archs ios/build/performance/Build/Products/Release-iphonesimulator/AIWorkspace.app/AIWorkspace \
     >ios-evidence/performance/architectures.txt
@@ -26,6 +26,14 @@ ditto -c -k --sequesterRsrc --keepParent ios/build/performance/Build/Products/Re
     ios-evidence/performance/AIWorkspace-release-simulator.app.zip
 xcrun simctl boot "$simulator_id" || true
 xcrun simctl bootstatus "$simulator_id" -b
+if [ "${GITHUB_ACTIONS:-}" = true ]; then
+    # Keep the default full run and a standalone measurement comparable. Remove
+    # only this app's data on the ephemeral CI simulator, after functional tests.
+    if xcrun simctl get_app_container "$simulator_id" io.github.kuoforever.aiworkspace.ios app >/dev/null 2>&1; then
+        xcrun simctl uninstall "$simulator_id" io.github.kuoforever.aiworkspace.ios
+    fi
+    printf '%s\n' 'fresh-app-data-on-isolated-ci-simulator' >ios-evidence/performance/app-data-state.txt
+fi
 for app_bundle in AIWorkspace.app AIWorkspaceUITests-Runner.app; do
     xcrun simctl install "$simulator_id" "ios/build/performance/Build/Products/Release-iphonesimulator/$app_bundle"
 done
@@ -33,7 +41,7 @@ xcodebuild test-without-building -configuration Release -project ios/AIWorkspace
     -destination "platform=iOS Simulator,id=$simulator_id" -derivedDataPath ios/build/performance \
     -only-testing:AIWorkspaceTests/DocumentPerformanceTests -only-testing:AIWorkspaceUITests/LaunchPerformanceTests \
     -resultBundlePath ios-evidence/performance/Performance.xcresult -parallel-testing-enabled NO \
-    CODE_SIGNING_ALLOWED=NO -enableCodeCoverage NO >ios-evidence/performance/tests.log 2>&1 || {
+    CODE_SIGNING_ALLOWED=NO ENABLE_CODE_COVERAGE=NO -enableCodeCoverage NO >ios-evidence/performance/tests.log 2>&1 || {
     tail -100 ios-evidence/performance/tests.log; exit 1;
 }
 xcrun xcresulttool get test-results summary --path ios-evidence/performance/Performance.xcresult \
