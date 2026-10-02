@@ -4,6 +4,7 @@ import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -209,6 +210,55 @@ class WorkspaceViewModelTest {
         vm.create()
         assertTrue(vm.ui.shouldPoll)
         assertFalse(vm.ui.copy(cached = true).shouldPoll)
+    }
+
+    @Test fun backgroundingCancelsPollingWithoutPublishingALateResult() {
+        val gate = CompletableDeferred<String>()
+        val response = ReviewSnapshot("poll-review", 1, "waiting_model", ReviewInput(), emptyMap())
+        val api = object : WorkspaceApi {
+            override suspend fun request(path: String, body: String?, key: String?): String = when {
+                path == "/catalog" -> "{\"checks\":[]}"
+                body != null -> wireJson.encodeToString(response)
+                path == "/reviews/poll-review" -> gate.await()
+                else -> "[]"
+            }
+        }
+        val vm = WorkspaceViewModel(api, Store(), DiskExecutor(dispatcher))
+        vm.createPage(); vm.example(); vm.create()
+        assertTrue(vm.ui.shouldPoll)
+        vm.poll()
+        assertTrue(vm.ui.busy)
+        vm.pausePolling()
+        assertFalse(vm.ui.busy)
+        assertNull(vm.ui.error)
+        assertEquals(Connection.CONNECTED, vm.ui.connection)
+        gate.complete(wireJson.encodeToString(response.copy(status = "completed")))
+        assertEquals("waiting_model", vm.ui.review?.status)
+        vm.poll()
+        assertEquals("completed", vm.ui.review?.status)
+    }
+
+    @Test fun pausingPollingDoesNotCancelAManualSubmission() {
+        val gate = CompletableDeferred<String>()
+        val api = object : WorkspaceApi {
+            override suspend fun request(path: String, body: String?, key: String?): String = when {
+                path == "/catalog" -> "{\"checks\":[]}"
+                body != null -> gate.await()
+                else -> "[]"
+            }
+        }
+        val store = Store()
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
+        vm.createPage(); vm.example(); vm.create()
+        val original = store.command
+        assertNotNull(original)
+        vm.pausePolling()
+        assertTrue(vm.ui.busy)
+        assertEquals(original, store.command)
+        gate.complete(wireJson.encodeToString(ReviewSnapshot("created", 1, "waiting_model", ReviewInput(), emptyMap())))
+        assertFalse(vm.ui.busy)
+        assertNull(store.command)
+        assertEquals("created", vm.ui.review?.id)
     }
 
     @Test fun importedDraftAndOfflineReportsDoNotDependOnNetwork() {

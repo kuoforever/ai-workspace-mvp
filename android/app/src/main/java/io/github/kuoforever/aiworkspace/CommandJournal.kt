@@ -1,5 +1,8 @@
 package io.github.kuoforever.aiworkspace
 
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+
 class CommandJournal(private val store: CommandStore, private val api: WorkspaceApi, private val disk: DiskExecutor = DiskExecutor()) {
     var pending: PendingCommand? = store.pending()
         private set
@@ -21,6 +24,7 @@ class CommandJournal(private val store: CommandStore, private val api: Workspace
             }
             throw failure
         }
+        currentCoroutineContext().ensureActive()
         val review = wireJson.decodeFromString<ReviewSnapshot>(response)
         // Keep the request until both the response and its local state are saved.
         accept(review)

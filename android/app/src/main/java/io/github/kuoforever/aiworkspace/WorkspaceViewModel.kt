@@ -9,6 +9,9 @@ import java.io.IOException
 import java.net.URLEncoder
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 
@@ -47,11 +50,13 @@ class WorkspaceViewModel(
     private val disk: DiskExecutor = DiskExecutor(),
 ) : ViewModel() {
     private var journal: CommandJournal? = null
+    private var polling: Job? = null
     private val edits = EditPersistence(viewModelScope, disk) { state -> ui = ui.copy(saveState = state) }
     private val observedApi = object : WorkspaceApi {
         override suspend fun request(path: String, body: String?, key: String?): String {
             try {
                 val result = api.request(path, body, key)
+                currentCoroutineContext().ensureActive()
                 ui = ui.copy(connection = Connection.CONNECTED)
                 return result
             } catch (failure: ApiFailure) {
@@ -90,10 +95,10 @@ class WorkspaceViewModel(
         }
     }
 
-    private fun operation(block: suspend () -> Unit) {
+    private fun operation(autoRefresh: Boolean = false, block: suspend () -> Unit) {
         if (ui.busy || ui.loadingLocal || ui.startupError != null) return
         ui = ui.copy(busy = true, error = null)
-        viewModelScope.launch {
+        val job = viewModelScope.launch {
             try { block() }
             catch (cancelled: CancellationException) { throw cancelled }
             catch (_: LocalDataFailure) { ui = ui.copy(error = "本机记录未能保存。输入和原提交已保留，请检查设备存储后重试。") }
@@ -107,14 +112,23 @@ class WorkspaceViewModel(
                 ui = ui.copy(error = failure.message ?: "暂时无法完成，请稍后重试。")
             } finally { ui = ui.copy(busy = false, pending = journal?.pending) }
         }
+        if (autoRefresh) polling = job
     }
 
-    fun refresh() = operation {
+    fun refresh() = operation { refreshData() }
+
+    fun poll() {
+        if (ui.shouldPoll) operation(autoRefresh = true) { refreshData() }
+    }
+
+    fun pausePolling() { polling?.cancel(); polling = null }
+
+    private suspend fun refreshData() {
         if (ui.page == Page.DETAIL) edits.flush()
         if (ui.page == Page.HOME && ui.savedOnly) {
             val rows = disk.run { store.cachedReviews().map { it.summary() } }
             ui = ui.copy(savedRows = rows)
-            return@operation
+            return
         }
         if (ui.checks.isEmpty()) {
             ui = ui.copy(checks = wireJson.decodeFromString<Catalog>(observedApi.request("/catalog")).checks)

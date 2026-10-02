@@ -45,6 +45,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 
@@ -79,16 +80,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Workspace(vm: WorkspaceViewModel) {
     val state = vm.ui
+    ReportDrawnWhen { !state.loadingLocal && !state.busy }
     val context = LocalContext.current
     var connectionHelp by rememberSaveable { mutableStateOf(false) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(vm, lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            while (true) {
-                delay(3000)
-                val current = vm.ui
-                if (current.shouldPoll) vm.refresh()
-            }
+            try {
+                while (true) { delay(3000); vm.poll() }
+            } finally { vm.pausePolling() }
         }
     }
     BackHandler(state.page != Page.HOME) { vm.back() }

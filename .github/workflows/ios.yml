@@ -2,18 +2,22 @@ name: iOS
 
 on:
   push:
-    paths: ["ios/**", "app/**", "knowledge/**", "fixtures/**", "scripts/ios-simulator-check.sh", ".github/workflows/ios.yml", "uv.lock"]
+    paths: ["ios/**", "app/**", "knowledge/**", "fixtures/**", "scripts/ios*.sh", "scripts/mobile-performance*", ".github/workflows/ios.yml", "uv.lock"]
   pull_request:
-    paths: ["ios/**", "app/**", "knowledge/**", "fixtures/**", "scripts/ios-simulator-check.sh", ".github/workflows/ios.yml", "uv.lock"]
+    paths: ["ios/**", "app/**", "knowledge/**", "fixtures/**", "scripts/ios*.sh", "scripts/mobile-performance*", ".github/workflows/ios.yml", "uv.lock"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ios-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   native:
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       PYTHONUTF8: "1"

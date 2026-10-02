@@ -38,6 +38,7 @@ test_exit=0
 xcodebuild test-without-building -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
   -destination "platform=iOS Simulator,id=$device_id" -derivedDataPath ios/build \
   -resultBundlePath ios-evidence/Tests.xcresult -parallel-testing-enabled NO \
+  -skip-testing:AIWorkspaceTests/DocumentPerformanceTests -skip-testing:AIWorkspaceUITests/LaunchPerformanceTests \
   CODE_SIGNING_ALLOWED=NO >ios-evidence/tests.log 2>&1 || test_exit=$?
 finish_recording
 trap - EXIT
@@ -91,3 +92,4 @@ for profile in compact tablet; do
   if [ "$layout_exit" -ne 0 ]; then exit "$layout_exit"; fi
 done
 xcrun simctl delete "$compact_id"
+bash scripts/ios-performance-check.sh "$device_id"

@@ -1,5 +1,12 @@
 import XCTest
 
+private final class FixtureResponse: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: (Data?, Error?) = (nil, nil)
+    func set(_ data: Data?, _ error: Error?) { lock.lock(); defer { lock.unlock() }; value = (data, error) }
+    func get() -> (Data?, Error?) { lock.lock(); defer { lock.unlock() }; return value }
+}
+
 final class WorkspaceFlowTests: XCTestCase {
     private let app = XCUIApplication()
     override func setUpWithError() throws {
@@ -87,15 +94,15 @@ final class WorkspaceFlowTests: XCTestCase {
             req.setValue(key, forHTTPHeaderField: "Idempotency-Key")
         }
         let done = expectation(description: "HTTP fixture")
-        var payload: Data?
-        var failure: Error?
+        let result = FixtureResponse()
         URLSession.shared.dataTask(with: req) { data, response, error in
             if let response = response as? HTTPURLResponse, !(200..<300).contains(response.statusCode) {
-                failure = NSError(domain: "FixtureHTTP", code: response.statusCode)
-            } else { payload = data; failure = error }
+                result.set(nil, NSError(domain: "FixtureHTTP", code: response.statusCode))
+            } else { result.set(data, error) }
             done.fulfill()
         }.resume()
         wait(for: [done], timeout: 20)
+        let (payload, failure) = result.get()
         if let failure { throw failure }
         return try JSONSerialization.jsonObject(with: XCTUnwrap(payload))
     }

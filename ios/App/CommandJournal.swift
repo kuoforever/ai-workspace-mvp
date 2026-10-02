@@ -35,6 +35,7 @@ import Foundation
             }
             throw error
         }
+        try Task.checkCancellation()
         let review = try Wire.decode(ReviewSnapshot.self, response)
         // The local response must be saved before its retry identity is cleared.
         try await accept(review)
