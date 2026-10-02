@@ -1,5 +1,12 @@
 import XCTest
 
+private final class FixtureResponse: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: (Data?, Error?) = (nil, nil)
+    func set(_ data: Data?, _ error: Error?) { lock.lock(); defer { lock.unlock() }; value = (data, error) }
+    func get() -> (Data?, Error?) { lock.lock(); defer { lock.unlock() }; return value }
+}
+
 final class WorkspaceFlowTests: XCTestCase {
     private let app = XCUIApplication()
     override func setUpWithError() throws {
@@ -65,6 +72,12 @@ final class WorkspaceFlowTests: XCTestCase {
         let button = app.buttons["keyboard-dismiss"]
         if button.waitForExistence(timeout: 2), button.isHittable { button.tap() }
     }
+    private func waitSaved() {
+        let label = app.staticTexts["save-state"]
+        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND label == %@", "输入已保存"), object: label)
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 20), .completed,
+            "Restart only after the latest input has been acknowledged as saved")
+    }
     private func shot(_ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name
@@ -81,21 +94,67 @@ final class WorkspaceFlowTests: XCTestCase {
             req.setValue(key, forHTTPHeaderField: "Idempotency-Key")
         }
         let done = expectation(description: "HTTP fixture")
-        var payload: Data?
-        var failure: Error?
+        let result = FixtureResponse()
         URLSession.shared.dataTask(with: req) { data, response, error in
             if let response = response as? HTTPURLResponse, !(200..<300).contains(response.statusCode) {
-                failure = NSError(domain: "FixtureHTTP", code: response.statusCode)
-            } else { payload = data; failure = error }
+                result.set(nil, NSError(domain: "FixtureHTTP", code: response.statusCode))
+            } else { result.set(data, error) }
             done.fulfill()
         }.resume()
         wait(for: [done], timeout: 20)
+        let (payload, failure) = result.get()
         if let failure { throw failure }
         return try JSONSerialization.jsonObject(with: XCTUnwrap(payload))
     }
     private func object(_ path: String, body: [String: Any]? = nil) throws -> [String: Any] {
         try XCTUnwrap(request(path, body: body) as? [String: Any])
     }
+    func testSystemDocumentPickerCancellationPreservesDraft() throws {
+        tap(app.buttons["new-review"])
+        let field = app.textViews["design"]
+        tap(field)
+        field.typeText("保留这份订单设计，超时后先查询状态。")
+        dismissKeyboard()
+        let original = field.value as? String
+        tap(app.buttons["import-document"])
+        if app.buttons["选择文件"].waitForExistence(timeout: 2) { tap(app.buttons["选择文件"]) }
+        let picker = app.navigationBars["FullDocumentManagerViewControllerNavigationBar"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 20), "The native document picker must be presented")
+        let cancel = picker.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "取消", "Cancel")).firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 20))
+        shot("documents-system-picker")
+        cancel.tap()
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        XCTAssertEqual(field.value as? String, original)
+        shot("documents-picker-cancel")
+    }
+
+    func testSavedReportAndCitationCanBeReadAndExportedAfterRelaunch() throws {
+        let title = "Offline " + String(UUID().uuidString.prefix(8))
+        let created = try object("/reviews", body: [
+            "mode": "scripted", "title": title, "design": String(repeating: "超时后先查询状态，再决定是否重试。", count: 12),
+            "check_ids": ["CON-01"], "workbench_record_id": "ios-offline-ui"
+        ])
+        let id = try XCTUnwrap(created["id"] as? String)
+        tap(app.buttons["refresh"])
+        tap(app.buttons["review:" + id])
+        waitStatus("已完成")
+        app.terminate()
+        app.launch()
+        tap(app.buttons["saved-library"])
+        tap(app.buttons["review:" + id])
+        waitStatus("已完成")
+        XCTAssertTrue(app.staticTexts["缓存快照 · 刷新以核对最新状态"].exists)
+        tap(app.buttons["source:CON-01:0"])
+        XCTAssertTrue(app.staticTexts["source-location"].waitForExistence(timeout: 10))
+        shot("documents-offline-source")
+        tap(app.buttons["back"])
+        tap(app.buttons["export"])
+        XCTAssertTrue(app.staticTexts["export-title"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["share-report"].exists)
+        shot("documents-offline-export")
+    }
+
     func testLayoutKeepsDraftAndSubmitReachableAfterRotation() throws {
         let title = "Layout " + String(UUID().uuidString.prefix(8))
         let designText = "Order API checks payment status before retrying a failed request."
@@ -135,6 +194,7 @@ final class WorkspaceFlowTests: XCTestCase {
         let design = app.textViews["design"]
         design.tap(); design.typeText("Order API retries payment on timeout without checking payment status.")
         dismissKeyboard()
+        waitSaved()
         app.terminate(); app.launch()
         tap(app.buttons["new-review"])
         XCTAssertEqual(app.textFields["review-title"].value as? String, title)
@@ -151,6 +211,7 @@ final class WorkspaceFlowTests: XCTestCase {
         let input = app.textViews["answer:q1"]
         tap(input); input.typeText(answer)
         dismissKeyboard()
+        waitSaved()
         app.terminate(); app.launch()
         tap(app.buttons["review:" + id])
         XCTAssertTrue(app.textViews["answer:q1"].waitForExistence(timeout: 15))

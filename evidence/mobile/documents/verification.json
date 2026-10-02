@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "verified_at_utc": "2026-10-02T03:25:19Z",
+  "status": "passed",
+  "model_inference": false,
+  "scope": [
+    "native_utf8_document_import",
+    "citation_line_and_context",
+    "twenty_saved_review_snapshots",
+    "offline_markdown_sharing",
+    "serial_background_edit_persistence",
+    "retain_failed_edits_and_flush_before_submission_or_review_refresh_reopen"
+  ],
+  "backend": {
+    "source_commit": "b17014e4acdd848dfe18872c1f14feea4bbf612d",
+    "run_url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36957786983",
+    "environments": [
+      "Windows",
+      "Ubuntu"
+    ],
+    "python": "3.12",
+    "tests": 24,
+    "ruff": "passed"
+  },
+  "android": {
+    "source_commit": "6521975a551235250a128eaafe8cd1afd5443d98",
+    "run_url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36954740886",
+    "os": "Android 15 / API 35 emulator",
+    "build": "passed",
+    "lint": "passed",
+    "unit_tests": 22,
+    "device_tests": 5,
+    "process_recovery_checks": 6,
+    "artifact": {
+      "file": "AIWorkspace-mobile-update-6521975.apk",
+      "bytes": 9736991,
+      "sha256": "a43242a18b598aded9c46d01a007c97849dbee724dd13a0b4bc60a10ebfddd33"
+    }
+  },
+  "ios": {
+    "source_commit": "b17014e4acdd848dfe18872c1f14feea4bbf612d",
+    "run_url": "https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36957786953",
+    "os": "iOS 18.5 Simulator",
+    "xcode": "16.4",
+    "architectures": [
+      "x86_64",
+      "arm64"
+    ],
+    "build": "passed",
+    "unit_tests": 20,
+    "ui_tests": 5,
+    "iphone16": {
+      "passed": 25,
+      "failed": 0,
+      "skipped": 0
+    },
+    "additional_layouts": [
+      {
+        "device": "iPhone SE (third generation)",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      },
+      {
+        "device": "iPad Pro",
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0
+      }
+    ],
+    "artifact": {
+      "file": "AIWorkspace-iOS-simulator-b17014e.zip",
+      "bytes": 6353912,
+      "sha256": "5831b49574614e2486ec69f6fe23f689c0cfc0a483d3463ce7799b79dec12e9c"
+    }
+  },
+  "provenance": {
+    "production_app_sources_equal_between_platform_commits": true,
+    "comparison": "git diff 6521975..b17014e -- android/app ios/App",
+    "note": "Later commits change only the iOS picker test and simulator registration script."
+  },
+  "limitations": [
+    "UTF-8 .md, .markdown and .txt; 10-8000 Unicode scalars; 32768-byte read limit.",
+    "Input still marked saving can be lost when the application is terminated unexpectedly.",
+    "Simulator verification; physical devices, power failure and other OS versions need separate validation.",
+    "Scripted and recorded model output replay; no live inference or semantic model-quality evaluation."
+  ]
+}

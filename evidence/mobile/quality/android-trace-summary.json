@@ -1,0 +1,1679 @@
+{
+  "schema_version": 1,
+  "perfetto_python_version": "0.58.2",
+  "window": "Entire collected iteration trace, not FrameTimingMetric's selected-frame window",
+  "interpretation": "Nested wall-clock slices; totals overlap and must not be added or called CPU usage",
+  "query": "\nSELECT t.name AS thread,\n       CASE WHEN s.name GLOB 'Choreographer#doFrame*' THEN 'Choreographer#doFrame'\n            WHEN s.name GLOB 'DrawFrames*' THEN 'DrawFrames' ELSE s.name END AS label,\n       COUNT(*) AS n, AVG(s.dur)/1000000.0 AS average_ms,\n       MAX(s.dur)/1000000.0 AS max_ms, SUM(s.dur)/1000000.0 AS total_ms\nFROM slice s JOIN thread_track tt ON s.track_id=tt.id\nJOIN thread t ON t.utid=tt.utid JOIN process p ON p.upid=t.upid\nWHERE p.name='io.github.kuoforever.aiworkspace' AND s.dur>0\nGROUP BY t.name,label ORDER BY total_ms DESC LIMIT 20\n",
+  "iterations": [
+    {
+      "workload": "scrollTwentyReviewRows",
+      "trace": "WorkspaceBenchmark_scrollTwentyReviewRows_iter000_2026-10-02-05-47-20.perfetto-trace",
+      "sha256": "d537110f5dca4e6fec450c6d82700b465748d06cce47f9aa919caf5b2bc55d1d",
+      "slices": [
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 281,
+          "average_ms": 21.369930946619217,
+          "max_ms": 75.005021,
+          "total_ms": 6004.950596
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 118,
+          "average_ms": 33.45247504237288,
+          "max_ms": 54.917795,
+          "total_ms": 3947.392055
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 109,
+          "average_ms": 35.96094293577982,
+          "max_ms": 54.821655,
+          "total_ms": 3919.74278
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 118,
+          "average_ms": 28.071123855932203,
+          "max_ms": 74.55426,
+          "total_ms": 3312.392615
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 118,
+          "average_ms": 28.006767296610168,
+          "max_ms": 74.503406,
+          "total_ms": 3304.798541
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 118,
+          "average_ms": 27.401517627118643,
+          "max_ms": 74.308062,
+          "total_ms": 3233.37908
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 109,
+          "average_ms": 29.065862311926608,
+          "max_ms": 50.539256,
+          "total_ms": 3168.178992
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 109,
+          "average_ms": 24.866885642201833,
+          "max_ms": 43.682865,
+          "total_ms": 2710.490535
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 109,
+          "average_ms": 6.549516990825689,
+          "max_ms": 25.486288,
+          "total_ms": 713.897352
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 218,
+          "average_ms": 2.497219266055046,
+          "max_ms": 21.168552,
+          "total_ms": 544.3938
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 109,
+          "average_ms": 3.0298209357798163,
+          "max_ms": 18.65397,
+          "total_ms": 330.250482
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 109,
+          "average_ms": 3.006283614678899,
+          "max_ms": 18.641968,
+          "total_ms": 327.684914
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 70,
+          "average_ms": 3.1143901142857144,
+          "max_ms": 25.350853,
+          "total_ms": 218.007308
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "input",
+          "count": 206,
+          "average_ms": 0.7709563786407767,
+          "max_ms": 29.897544,
+          "total_ms": 158.817014
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "VRI[MainActivity]",
+          "count": 206,
+          "average_ms": 0.7667972524271844,
+          "max_ms": 29.893968,
+          "total_ms": 157.960234
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "animation",
+          "count": 119,
+          "average_ms": 1.319903218487395,
+          "max_ms": 26.008194,
+          "total_ms": 157.068483
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "queueBuffer",
+          "count": 218,
+          "average_ms": 0.5333692660550459,
+          "max_ms": 5.866826,
+          "total_ms": 116.2745
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 149,
+          "average_ms": 0.7688431275167785,
+          "max_ms": 25.774068,
+          "total_ms": 114.557626
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:onTouch",
+          "count": 117,
+          "average_ms": 0.910258188034188,
+          "max_ms": 29.761811,
+          "total_ms": 106.500208
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#scheduleVsyncLocked",
+          "count": 212,
+          "average_ms": 0.3039243018867925,
+          "max_ms": 10.987823,
+          "total_ms": 64.431952
+        }
+      ]
+    },
+    {
+      "workload": "scrollTwentyReviewRows",
+      "trace": "WorkspaceBenchmark_scrollTwentyReviewRows_iter001_2026-10-02-05-47-39.perfetto-trace",
+      "sha256": "363ae1058ec0b23c20bbda2dd9a8b4a471d6987fd5eaf17924112ab9ba359432",
+      "slices": [
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 304,
+          "average_ms": 21.20762929276316,
+          "max_ms": 89.794919,
+          "total_ms": 6447.119305
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 122,
+          "average_ms": 34.36776853278688,
+          "max_ms": 54.177224,
+          "total_ms": 4192.867761
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 115,
+          "average_ms": 35.760773773913044,
+          "max_ms": 54.059795,
+          "total_ms": 4112.488984
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 122,
+          "average_ms": 28.51316618852459,
+          "max_ms": 88.163547,
+          "total_ms": 3478.606275
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 122,
+          "average_ms": 28.38661956557377,
+          "max_ms": 88.141425,
+          "total_ms": 3463.167587
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 122,
+          "average_ms": 28.13839195081967,
+          "max_ms": 87.895858,
+          "total_ms": 3432.883818
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 115,
+          "average_ms": 29.327595173913043,
+          "max_ms": 52.994348,
+          "total_ms": 3372.673445
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 115,
+          "average_ms": 25.458094191304347,
+          "max_ms": 42.414134,
+          "total_ms": 2927.680832
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 115,
+          "average_ms": 6.067691634782609,
+          "max_ms": 21.250439,
+          "total_ms": 697.784538
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 230,
+          "average_ms": 2.2787366782608696,
+          "max_ms": 16.89262,
+          "total_ms": 524.109436
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 115,
+          "average_ms": 2.376200486956522,
+          "max_ms": 12.846217,
+          "total_ms": 273.263056
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 115,
+          "average_ms": 2.3272339565217393,
+          "max_ms": 12.802365,
+          "total_ms": 267.631905
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 74,
+          "average_ms": 2.9089652162162163,
+          "max_ms": 14.175445,
+          "total_ms": 215.263426
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "queueBuffer",
+          "count": 230,
+          "average_ms": 0.706700952173913,
+          "max_ms": 7.416236,
+          "total_ms": 162.541219
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "input",
+          "count": 216,
+          "average_ms": 0.7223973842592593,
+          "max_ms": 41.605383,
+          "total_ms": 156.037835
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "VRI[MainActivity]",
+          "count": 216,
+          "average_ms": 0.717682949074074,
+          "max_ms": 41.601566,
+          "total_ms": 155.019517
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "animation",
+          "count": 123,
+          "average_ms": 1.0343980650406503,
+          "max_ms": 31.328306,
+          "total_ms": 127.230962
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 147,
+          "average_ms": 0.7929030272108843,
+          "max_ms": 31.222058,
+          "total_ms": 116.556745
+        },
+        {
+          "thread": "HWC release",
+          "slice": "waitForever",
+          "count": 23,
+          "average_ms": 3.691717260869565,
+          "max_ms": 19.881094,
+          "total_ms": 84.909497
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "auto skgpu::ganesh::OpsTask::onExecute(GrOpFlushState *)::(anonymous class)::operator()() const",
+          "count": 115,
+          "average_ms": 0.6616127304347825,
+          "max_ms": 8.631169,
+          "total_ms": 76.085464
+        }
+      ]
+    },
+    {
+      "workload": "scrollTwentyReviewRows",
+      "trace": "WorkspaceBenchmark_scrollTwentyReviewRows_iter002_2026-10-02-05-47-58.perfetto-trace",
+      "sha256": "f191b8576e91e46ff3424be843f6a50c45362854e42461028f81fe1fde8cd97a",
+      "slices": [
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 318,
+          "average_ms": 22.377369352201256,
+          "max_ms": 76.030921,
+          "total_ms": 7116.003454
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 128,
+          "average_ms": 35.4854713125,
+          "max_ms": 67.270113,
+          "total_ms": 4542.140328
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 123,
+          "average_ms": 36.58647704878049,
+          "max_ms": 67.180295,
+          "total_ms": 4500.136677
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 123,
+          "average_ms": 30.233251268292683,
+          "max_ms": 63.48094,
+          "total_ms": 3718.689906
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 128,
+          "average_ms": 28.25360409375,
+          "max_ms": 75.410835,
+          "total_ms": 3616.461324
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 128,
+          "average_ms": 28.2136593671875,
+          "max_ms": 72.825657,
+          "total_ms": 3611.348399
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 128,
+          "average_ms": 27.91848475,
+          "max_ms": 72.520317,
+          "total_ms": 3573.566048
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 123,
+          "average_ms": 25.412066593495936,
+          "max_ms": 55.985572,
+          "total_ms": 3125.684191
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 123,
+          "average_ms": 5.781980406504065,
+          "max_ms": 33.497188,
+          "total_ms": 711.18359
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 246,
+          "average_ms": 2.151234487804878,
+          "max_ms": 22.055287,
+          "total_ms": 529.203684
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 123,
+          "average_ms": 3.3260858943089433,
+          "max_ms": 26.974452,
+          "total_ms": 409.108565
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 123,
+          "average_ms": 3.3097241707317075,
+          "max_ms": 26.961108,
+          "total_ms": 407.096073
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 92,
+          "average_ms": 4.088488456521739,
+          "max_ms": 41.33938,
+          "total_ms": 376.140938
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "animation",
+          "count": 131,
+          "average_ms": 1.8063256259541984,
+          "max_ms": 28.189344,
+          "total_ms": 236.628657
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "input",
+          "count": 223,
+          "average_ms": 0.9362991255605382,
+          "max_ms": 39.135181,
+          "total_ms": 208.794705
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "VRI[MainActivity]",
+          "count": 223,
+          "average_ms": 0.930036067264574,
+          "max_ms": 39.131705,
+          "total_ms": 207.398043
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 158,
+          "average_ms": 1.22858614556962,
+          "max_ms": 27.931354,
+          "total_ms": 194.116611
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "queueBuffer",
+          "count": 246,
+          "average_ms": 0.6805889878048781,
+          "max_ms": 12.247951,
+          "total_ms": 167.424891
+        },
+        {
+          "thread": "HWC release",
+          "slice": "waitForever",
+          "count": 23,
+          "average_ms": 4.635969478260869,
+          "max_ms": 40.180937,
+          "total_ms": 106.627298
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "auto skgpu::ganesh::OpsTask::onExecute(GrOpFlushState *)::(anonymous class)::operator()() const",
+          "count": 123,
+          "average_ms": 0.6224079674796749,
+          "max_ms": 8.459637,
+          "total_ms": 76.55618
+        }
+      ]
+    },
+    {
+      "workload": "scrollTwentyReviewRows",
+      "trace": "WorkspaceBenchmark_scrollTwentyReviewRows_iter003_2026-10-02-05-48-16.perfetto-trace",
+      "sha256": "f25a62c20db47e956ba275ba2644c636b662ba7b715a8c4fa1ffe5b17ff0f670",
+      "slices": [
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 311,
+          "average_ms": 21.076011649517685,
+          "max_ms": 80.341664,
+          "total_ms": 6554.639623
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 127,
+          "average_ms": 34.260604472440946,
+          "max_ms": 61.42299,
+          "total_ms": 4351.096768
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 120,
+          "average_ms": 35.963772649999996,
+          "max_ms": 61.32627,
+          "total_ms": 4315.652718
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 127,
+          "average_ms": 27.894805842519684,
+          "max_ms": 79.365975,
+          "total_ms": 3542.640342
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 127,
+          "average_ms": 27.650173299212597,
+          "max_ms": 79.345777,
+          "total_ms": 3511.572009
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 120,
+          "average_ms": 29.239323433333333,
+          "max_ms": 53.980316,
+          "total_ms": 3508.718812
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 127,
+          "average_ms": 27.290303692913387,
+          "max_ms": 79.284062,
+          "total_ms": 3465.868569
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 120,
+          "average_ms": 25.15735779166667,
+          "max_ms": 40.36878,
+          "total_ms": 3018.882935
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 120,
+          "average_ms": 6.3398188499999995,
+          "max_ms": 26.58658,
+          "total_ms": 760.778262
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 240,
+          "average_ms": 2.314417033333333,
+          "max_ms": 25.732638,
+          "total_ms": 555.460088
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 81,
+          "average_ms": 5.540818345679012,
+          "max_ms": 41.11984,
+          "total_ms": 448.806286
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 120,
+          "average_ms": 2.8323551333333334,
+          "max_ms": 22.49486,
+          "total_ms": 339.882616
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 120,
+          "average_ms": 2.8159717333333334,
+          "max_ms": 22.478238,
+          "total_ms": 337.916608
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "input",
+          "count": 225,
+          "average_ms": 1.0695060088888888,
+          "max_ms": 37.940274,
+          "total_ms": 240.638852
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "VRI[MainActivity]",
+          "count": 225,
+          "average_ms": 1.0663222133333334,
+          "max_ms": 37.936646,
+          "total_ms": 239.922498
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "queueBuffer",
+          "count": 240,
+          "average_ms": 0.6271019458333333,
+          "max_ms": 16.679872,
+          "total_ms": 150.504467
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "animation",
+          "count": 128,
+          "average_ms": 0.7725576484375,
+          "max_ms": 13.703184,
+          "total_ms": 98.887379
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "dispatchInputEvent MotionEvent ACTION_MOVE deviceId=-1 source=0x1002 historySize=2",
+          "count": 109,
+          "average_ms": 0.9060112844036697,
+          "max_ms": 37.88979,
+          "total_ms": 98.75523
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 150,
+          "average_ms": 0.6277883666666667,
+          "max_ms": 13.4912,
+          "total_ms": 94.168255
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferSubData encode",
+          "count": 240,
+          "average_ms": 0.33955405,
+          "max_ms": 13.548616,
+          "total_ms": 81.492972
+        }
+      ]
+    },
+    {
+      "workload": "scrollTwentyReviewRows",
+      "trace": "WorkspaceBenchmark_scrollTwentyReviewRows_iter004_2026-10-02-05-48-35.perfetto-trace",
+      "sha256": "949aa9153e4eecae67f32603e80717999b04d446be79d433b2c3f4b960d0dd82",
+      "slices": [
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 302,
+          "average_ms": 22.001826837748347,
+          "max_ms": 72.897877,
+          "total_ms": 6644.551705
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 126,
+          "average_ms": 34.120489047619046,
+          "max_ms": 52.674422,
+          "total_ms": 4299.18162
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 120,
+          "average_ms": 35.40594928333333,
+          "max_ms": 52.583483,
+          "total_ms": 4248.713914
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 126,
+          "average_ms": 28.40537353968254,
+          "max_ms": 72.257614,
+          "total_ms": 3579.077066
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 126,
+          "average_ms": 28.354553087301586,
+          "max_ms": 72.238128,
+          "total_ms": 3572.673689
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 126,
+          "average_ms": 28.04811215079365,
+          "max_ms": 71.394585,
+          "total_ms": 3534.062131
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 120,
+          "average_ms": 29.014544816666668,
+          "max_ms": 50.513334,
+          "total_ms": 3481.745378
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 120,
+          "average_ms": 24.543512141666664,
+          "max_ms": 42.989723,
+          "total_ms": 2945.221457
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 120,
+          "average_ms": 5.952930224999999,
+          "max_ms": 20.561622,
+          "total_ms": 714.351627
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 240,
+          "average_ms": 2.192338808333333,
+          "max_ms": 16.498211,
+          "total_ms": 526.161314
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 90,
+          "average_ms": 4.809964944444444,
+          "max_ms": 42.534049,
+          "total_ms": 432.896845
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 120,
+          "average_ms": 3.3048236,
+          "max_ms": 21.242237,
+          "total_ms": 396.578832
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 120,
+          "average_ms": 3.2752985833333335,
+          "max_ms": 21.228352,
+          "total_ms": 393.03583
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 154,
+          "average_ms": 0.8717239675324676,
+          "max_ms": 39.736092,
+          "total_ms": 134.245491
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "animation",
+          "count": 127,
+          "average_ms": 1.0470685118110237,
+          "max_ms": 39.978955,
+          "total_ms": 132.977701
+        },
+        {
+          "thread": "HWC release",
+          "slice": "waitForever",
+          "count": 24,
+          "average_ms": 5.500488291666667,
+          "max_ms": 39.864444,
+          "total_ms": 132.011719
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "input",
+          "count": 215,
+          "average_ms": 0.5376159860465117,
+          "max_ms": 10.225141,
+          "total_ms": 115.587437
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "VRI[MainActivity]",
+          "count": 215,
+          "average_ms": 0.5343001674418604,
+          "max_ms": 10.221864,
+          "total_ms": 114.874536
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "queueBuffer",
+          "count": 240,
+          "average_ms": 0.45895645,
+          "max_ms": 5.946842,
+          "total_ms": 110.149548
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "auto skgpu::ganesh::OpsTask::onExecute(GrOpFlushState *)::(anonymous class)::operator()() const",
+          "count": 120,
+          "average_ms": 0.7398654166666666,
+          "max_ms": 4.829128,
+          "total_ms": 88.78385
+        }
+      ]
+    },
+    {
+      "workload": "pasteEightThousandCharacters",
+      "trace": "WorkspaceBenchmark_pasteEightThousandCharacters_iter000_2026-10-02-05-48-45.perfetto-trace",
+      "sha256": "14c50bf9c88a7179a47396a79c3c8f3a1a4df030881dd2218bea44657be862d6",
+      "slices": [
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 7,
+          "average_ms": 30.130053,
+          "max_ms": 94.296313,
+          "total_ms": 210.910371
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 7,
+          "average_ms": 30.060453142857142,
+          "max_ms": 94.242543,
+          "total_ms": 210.423172
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 9,
+          "average_ms": 18.481424555555556,
+          "max_ms": 82.996976,
+          "total_ms": 166.332821
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 7,
+          "average_ms": 22.837858,
+          "max_ms": 82.983881,
+          "total_ms": 159.865006
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 7,
+          "average_ms": 22.814316714285713,
+          "max_ms": 82.961479,
+          "total_ms": 159.700217
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 7,
+          "average_ms": 22.30007042857143,
+          "max_ms": 70.236947,
+          "total_ms": 156.100493
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 7,
+          "average_ms": 17.418084714285712,
+          "max_ms": 69.741674,
+          "total_ms": 121.926593
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 7,
+          "average_ms": 13.728650142857143,
+          "max_ms": 79.18488,
+          "total_ms": 96.100551
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Record View#draw()",
+          "count": 7,
+          "average_ms": 9.068636571428572,
+          "max_ms": 22.087042,
+          "total_ms": 63.480456
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 7,
+          "average_ms": 8.439684,
+          "max_ms": 20.736404,
+          "total_ms": 59.077788
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "TextLayout:initLayout",
+          "count": 6,
+          "average_ms": 8.769004833333334,
+          "max_ms": 19.389914,
+          "total_ms": 52.614029
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Constructing StaticLayout",
+          "count": 6,
+          "average_ms": 8.718668,
+          "max_ms": 19.332488,
+          "total_ms": 52.312008
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 7,
+          "average_ms": 7.344824285714285,
+          "max_ms": 22.539213,
+          "total_ms": 51.41377
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 7,
+          "average_ms": 4.306728714285715,
+          "max_ms": 19.215799,
+          "total_ms": 30.147101
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 7,
+          "average_ms": 4.290971,
+          "max_ms": 19.204139,
+          "total_ms": 30.036797
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 17,
+          "average_ms": 1.5014746470588236,
+          "max_ms": 11.914018,
+          "total_ms": 25.525069
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 6,
+          "average_ms": 3.1986895,
+          "max_ms": 10.711494,
+          "total_ms": 19.192137
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "auto skgpu::ganesh::OpsTask::onExecute(GrOpFlushState *)::(anonymous class)::operator()() const",
+          "count": 7,
+          "average_ms": 2.5803168571428574,
+          "max_ms": 16.389829,
+          "total_ms": 18.062218
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "CircularRRectOp",
+          "count": 40,
+          "average_ms": 0.42037875,
+          "max_ms": 16.285334,
+          "total_ms": 16.81515
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "shader_compile",
+          "count": 1,
+          "average_ms": 16.257683,
+          "max_ms": 16.257683,
+          "total_ms": 16.257683
+        }
+      ]
+    },
+    {
+      "workload": "pasteEightThousandCharacters",
+      "trace": "WorkspaceBenchmark_pasteEightThousandCharacters_iter001_2026-10-02-05-48-49.perfetto-trace",
+      "sha256": "22ff5bba34250b51a71646ea4dbcbc3cf11e7c0104db3f1789b52ef420f2aca9",
+      "slices": [
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 6,
+          "average_ms": 16.281563333333334,
+          "max_ms": 25.38483,
+          "total_ms": 97.68938
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 6,
+          "average_ms": 16.125874666666665,
+          "max_ms": 25.014078,
+          "total_ms": 96.755248
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 11,
+          "average_ms": 8.708032181818181,
+          "max_ms": 28.795544,
+          "total_ms": 95.788354
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 6,
+          "average_ms": 14.401344166666666,
+          "max_ms": 27.257808,
+          "total_ms": 86.408065
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 6,
+          "average_ms": 14.378284833333334,
+          "max_ms": 27.206262,
+          "total_ms": 86.269709
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Record View#draw()",
+          "count": 6,
+          "average_ms": 11.314534,
+          "max_ms": 26.86147,
+          "total_ms": 67.887204
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 6,
+          "average_ms": 10.646601,
+          "max_ms": 18.99078,
+          "total_ms": 63.879606
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 6,
+          "average_ms": 10.2819505,
+          "max_ms": 25.331738,
+          "total_ms": 61.691703
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "TextLayout:initLayout",
+          "count": 9,
+          "average_ms": 6.357236555555556,
+          "max_ms": 24.511989,
+          "total_ms": 57.215129
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Constructing StaticLayout",
+          "count": 9,
+          "average_ms": 6.306206111111111,
+          "max_ms": 24.396114,
+          "total_ms": 56.755855
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 6,
+          "average_ms": 8.756774833333335,
+          "max_ms": 15.762422,
+          "total_ms": 52.540649
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 6,
+          "average_ms": 5.119759833333333,
+          "max_ms": 13.637448,
+          "total_ms": 30.718559
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 14,
+          "average_ms": 1.361184142857143,
+          "max_ms": 12.788676,
+          "total_ms": 19.056578
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 6,
+          "average_ms": 3.0461851666666666,
+          "max_ms": 6.971135,
+          "total_ms": 18.277111
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 6,
+          "average_ms": 2.8772273333333334,
+          "max_ms": 9.994771,
+          "total_ms": 17.263364
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "auto skgpu::ganesh::OpsTask::onPrepare(GrOpFlushState *)::(anonymous class)::operator()() const",
+          "count": 6,
+          "average_ms": 2.3664925,
+          "max_ms": 12.948264,
+          "total_ms": 14.198955
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "AtlasTextOp",
+          "count": 24,
+          "average_ms": 0.5650527916666667,
+          "max_ms": 12.904442,
+          "total_ms": 13.561267
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waiting for GPU completion 0",
+          "count": 1,
+          "average_ms": 9.998538,
+          "max_ms": 9.998538,
+          "total_ms": 9.998538
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glTexSubImage2D encode",
+          "count": 5,
+          "average_ms": 1.6614126,
+          "max_ms": 4.214546,
+          "total_ms": 8.307063
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 6,
+          "average_ms": 1.2929768333333334,
+          "max_ms": 4.64574,
+          "total_ms": 7.757861
+        }
+      ]
+    },
+    {
+      "workload": "pasteEightThousandCharacters",
+      "trace": "WorkspaceBenchmark_pasteEightThousandCharacters_iter002_2026-10-02-05-48-53.perfetto-trace",
+      "sha256": "2b140b52363d41ef2cbdc2260d1ac9c2dfbb83c05d029cb2554f5ad5cdfe6c2d",
+      "slices": [
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 11,
+          "average_ms": 8.272268727272728,
+          "max_ms": 27.519178,
+          "total_ms": 90.994956
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 6,
+          "average_ms": 14.977498166666667,
+          "max_ms": 29.216412,
+          "total_ms": 89.864989
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 6,
+          "average_ms": 14.876666666666667,
+          "max_ms": 29.128107,
+          "total_ms": 89.26
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 6,
+          "average_ms": 13.964727,
+          "max_ms": 26.181935,
+          "total_ms": 83.788362
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 6,
+          "average_ms": 13.946875,
+          "max_ms": 26.166446,
+          "total_ms": 83.68125
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 6,
+          "average_ms": 11.0350905,
+          "max_ms": 25.694296,
+          "total_ms": 66.210543
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Record View#draw()",
+          "count": 6,
+          "average_ms": 10.857153666666665,
+          "max_ms": 26.004705,
+          "total_ms": 65.142922
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 6,
+          "average_ms": 9.283358166666666,
+          "max_ms": 24.472829,
+          "total_ms": 55.700149
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "TextLayout:initLayout",
+          "count": 15,
+          "average_ms": 3.4796050666666667,
+          "max_ms": 23.366387,
+          "total_ms": 52.194076
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Constructing StaticLayout",
+          "count": 15,
+          "average_ms": 3.4471168,
+          "max_ms": 23.313107,
+          "total_ms": 51.706752
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 6,
+          "average_ms": 7.054902666666667,
+          "max_ms": 13.467378,
+          "total_ms": 42.329416
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 6,
+          "average_ms": 3.5194405,
+          "max_ms": 8.425987,
+          "total_ms": 21.116643
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 6,
+          "average_ms": 3.0728755,
+          "max_ms": 9.124943,
+          "total_ms": 18.437253
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 6,
+          "average_ms": 2.7982643333333335,
+          "max_ms": 12.119161,
+          "total_ms": 16.789586
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 6,
+          "average_ms": 2.7676208333333334,
+          "max_ms": 12.100456,
+          "total_ms": 16.605725
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 4,
+          "average_ms": 3.61609375,
+          "max_ms": 7.695125,
+          "total_ms": 14.464375
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 14,
+          "average_ms": 0.7549858571428572,
+          "max_ms": 4.158672,
+          "total_ms": 10.569802
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "queueBuffer",
+          "count": 12,
+          "average_ms": 0.69636125,
+          "max_ms": 1.528162,
+          "total_ms": 8.356335
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waiting for GPU completion 5",
+          "count": 1,
+          "average_ms": 7.698301,
+          "max_ms": 7.698301,
+          "total_ms": 7.698301
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "animation",
+          "count": 8,
+          "average_ms": 0.88926775,
+          "max_ms": 2.07092,
+          "total_ms": 7.114142
+        }
+      ]
+    },
+    {
+      "workload": "pasteEightThousandCharacters",
+      "trace": "WorkspaceBenchmark_pasteEightThousandCharacters_iter003_2026-10-02-05-48-58.perfetto-trace",
+      "sha256": "f9ee0efdf95adf9c89471d979d8bf14d74743962873630fb85bd6e657b049b43",
+      "slices": [
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 6,
+          "average_ms": 17.967590333333334,
+          "max_ms": 31.031733,
+          "total_ms": 107.805542
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 6,
+          "average_ms": 17.879958666666667,
+          "max_ms": 30.977871,
+          "total_ms": 107.279752
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 10,
+          "average_ms": 8.9400067,
+          "max_ms": 25.710967,
+          "total_ms": 89.400067
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 6,
+          "average_ms": 14.742261,
+          "max_ms": 28.06402,
+          "total_ms": 88.453566
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 6,
+          "average_ms": 14.056872666666665,
+          "max_ms": 24.65038,
+          "total_ms": 84.341236
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 6,
+          "average_ms": 14.033353833333335,
+          "max_ms": 24.633198,
+          "total_ms": 84.200123
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Record View#draw()",
+          "count": 6,
+          "average_ms": 11.059129,
+          "max_ms": 24.406596,
+          "total_ms": 66.354774
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 6,
+          "average_ms": 9.557016666666666,
+          "max_ms": 22.917319,
+          "total_ms": 57.3421
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "TextLayout:initLayout",
+          "count": 9,
+          "average_ms": 6.004350444444444,
+          "max_ms": 21.137943,
+          "total_ms": 54.039154
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Constructing StaticLayout",
+          "count": 9,
+          "average_ms": 5.949162,
+          "max_ms": 21.046783,
+          "total_ms": 53.542458
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 6,
+          "average_ms": 8.777882,
+          "max_ms": 15.604364,
+          "total_ms": 52.667292
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 6,
+          "average_ms": 4.989546666666667,
+          "max_ms": 12.379402,
+          "total_ms": 29.93728
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 6,
+          "average_ms": 4.948797666666667,
+          "max_ms": 12.242809,
+          "total_ms": 29.692786
+        },
+        {
+          "thread": "HWC release",
+          "slice": "waitForever",
+          "count": 2,
+          "average_ms": 9.978287,
+          "max_ms": 16.036022,
+          "total_ms": 19.956574
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 6,
+          "average_ms": 2.949462,
+          "max_ms": 5.917023,
+          "total_ms": 17.696772
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 6,
+          "average_ms": 2.8089738333333334,
+          "max_ms": 5.366393,
+          "total_ms": 16.853843
+        },
+        {
+          "thread": "HWC release",
+          "slice": "waiting for HWC release 3",
+          "count": 1,
+          "average_ms": 16.039179,
+          "max_ms": 16.039179,
+          "total_ms": 16.039179
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 4,
+          "average_ms": 3.06420475,
+          "max_ms": 5.920614,
+          "total_ms": 12.256819
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 14,
+          "average_ms": 0.5380571428571428,
+          "max_ms": 2.06506,
+          "total_ms": 7.5328
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waiting for GPU completion 3",
+          "count": 1,
+          "average_ms": 5.922747,
+          "max_ms": 5.922747,
+          "total_ms": 5.922747
+        }
+      ]
+    },
+    {
+      "workload": "pasteEightThousandCharacters",
+      "trace": "WorkspaceBenchmark_pasteEightThousandCharacters_iter004_2026-10-02-05-49-02.perfetto-trace",
+      "sha256": "e8fcd9d2e96322a0ddc4587920fe0f50beb9a035633ebcffb2def6b12e3aec58",
+      "slices": [
+        {
+          "thread": "RenderThread",
+          "slice": "DrawFrames",
+          "count": 6,
+          "average_ms": 16.8609405,
+          "max_ms": 31.909893,
+          "total_ms": 101.165643
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "Drawing  0.00  0.00 1080.00 2400.00",
+          "count": 6,
+          "average_ms": 16.785253,
+          "max_ms": 31.861123,
+          "total_ms": 100.711518
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Choreographer#doFrame",
+          "count": 9,
+          "average_ms": 9.455961777777778,
+          "max_ms": 24.968684,
+          "total_ms": 85.103656
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "traversal",
+          "count": 6,
+          "average_ms": 13.248449166666665,
+          "max_ms": 23.138332,
+          "total_ms": 79.490695
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "draw-VRI[MainActivity]",
+          "count": 6,
+          "average_ms": 13.229461833333334,
+          "max_ms": 23.125247,
+          "total_ms": 79.376771
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "eglSwapBuffersWithDamageKHR",
+          "count": 6,
+          "average_ms": 10.441937,
+          "max_ms": 19.04426,
+          "total_ms": 62.651622
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Record View#draw()",
+          "count": 6,
+          "average_ms": 9.493079,
+          "max_ms": 22.954258,
+          "total_ms": 56.958474
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "AndroidOwner:measureAndLayout",
+          "count": 6,
+          "average_ms": 8.764319333333335,
+          "max_ms": 21.461205,
+          "total_ms": 52.585916
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "TextLayout:initLayout",
+          "count": 3,
+          "average_ms": 16.83179966666667,
+          "max_ms": 20.83077,
+          "total_ms": 50.495399
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "Constructing StaticLayout",
+          "count": 3,
+          "average_ms": 16.741211,
+          "max_ms": 20.74977,
+          "total_ms": 50.223633
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "rcCreateSyncKHR encode",
+          "count": 6,
+          "average_ms": 7.260258333333333,
+          "max_ms": 14.970977,
+          "total_ms": 43.56155
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "flush commands",
+          "count": 6,
+          "average_ms": 6.041274,
+          "max_ms": 20.091683,
+          "total_ms": 36.247644
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waitForever",
+          "count": 5,
+          "average_ms": 5.1425256,
+          "max_ms": 8.909428,
+          "total_ms": 25.712628
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferDataSyncAEMU encode",
+          "count": 14,
+          "average_ms": 1.7151442142857143,
+          "max_ms": 15.266218,
+          "total_ms": 24.012019
+        },
+        {
+          "thread": "ver.aiworkspace",
+          "slice": "postAndWait",
+          "count": 6,
+          "average_ms": 3.7193313333333333,
+          "max_ms": 9.841215,
+          "total_ms": 22.315988
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer - VRI[MainActivity]#0(BLAST Consumer)0",
+          "count": 6,
+          "average_ms": 2.6454841666666664,
+          "max_ms": 12.65687,
+          "total_ms": 15.872905
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "dequeueBuffer",
+          "count": 6,
+          "average_ms": 2.6274658333333334,
+          "max_ms": 12.645911,
+          "total_ms": 15.764795
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waiting for GPU completion 5",
+          "count": 1,
+          "average_ms": 8.912003,
+          "max_ms": 8.912003,
+          "total_ms": 8.912003
+        },
+        {
+          "thread": "GPU completion",
+          "slice": "waiting for GPU completion 3",
+          "count": 1,
+          "average_ms": 6.389147,
+          "max_ms": 6.389147,
+          "total_ms": 6.389147
+        },
+        {
+          "thread": "RenderThread",
+          "slice": "glBufferSubData encode",
+          "count": 14,
+          "average_ms": 0.3910675,
+          "max_ms": 3.387642,
+          "total_ms": 5.474945
+        }
+      ]
+    }
+  ]
+}

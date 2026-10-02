@@ -5,3 +5,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "AIWorkspace"
 include(":app")
+include(":benchmark")

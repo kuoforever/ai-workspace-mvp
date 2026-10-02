@@ -16,6 +16,17 @@ lipo -archs ios/build/Build/Products/Debug-iphonesimulator/AIWorkspace.app/AIWor
 ditto -c -k --sequesterRsrc --keepParent ios/build/Build/Products/Debug-iphonesimulator/AIWorkspace.app ios-evidence/AIWorkspace-simulator.app.zip
 xcrun simctl boot "$device_id" || true
 xcrun simctl bootstatus "$device_id" -b
+# Register both bundles before XCTest starts, including on newly created devices.
+# Boot completion alone does not guarantee FrontBoard knows the test runner.
+install_test_apps() {
+  local test_simulator_id="$1"
+  local test_products="ios/build/Build/Products/Debug-iphonesimulator"
+  xcrun simctl install "$test_simulator_id" "$test_products/AIWorkspace.app"
+  xcrun simctl install "$test_simulator_id" "$test_products/AIWorkspaceUITests-Runner.app"
+  xcrun simctl get_app_container "$test_simulator_id" io.github.kuoforever.aiworkspace.ios app >/dev/null
+  xcrun simctl get_app_container "$test_simulator_id" io.github.kuoforever.aiworkspace.ios.uitests.xctrunner app >/dev/null
+}
+install_test_apps "$device_id"
 xcrun simctl io "$device_id" recordVideo --codec=h264 ios-evidence/ci-demo.mp4 >ios-evidence/recording.log 2>&1 &
 recording_pid=$!
 finish_recording() {
@@ -27,11 +38,13 @@ test_exit=0
 xcodebuild test-without-building -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
   -destination "platform=iOS Simulator,id=$device_id" -derivedDataPath ios/build \
   -resultBundlePath ios-evidence/Tests.xcresult -parallel-testing-enabled NO \
+  -skip-testing:AIWorkspaceTests/DocumentPerformanceTests -skip-testing:AIWorkspaceUITests/LaunchPerformanceTests \
   CODE_SIGNING_ALLOWED=NO >ios-evidence/tests.log 2>&1 || test_exit=$?
 finish_recording
 trap - EXIT
 tail -100 ios-evidence/tests.log
 xcrun xcresulttool get test-results summary --path ios-evidence/Tests.xcresult >ios-evidence/test-summary.json
+.venv/bin/python -c 'import json; s=json.load(open("ios-evidence/test-summary.json")); print(json.dumps({k:s[k] for k in ("result", "passedTests", "failedTests", "skippedTests")}, ensure_ascii=False))'
 if [ "$test_exit" -ne 0 ]; then
   .venv/bin/python -c 'import json; print(json.dumps(json.load(open("ios-evidence/test-summary.json"))["testFailures"], ensure_ascii=False))'
 fi
@@ -52,6 +65,7 @@ for profile in compact tablet; do
   if [ "$profile" = compact ]; then layout_id="$compact_id"; else layout_id="$tablet_id"; fi
   xcrun simctl boot "$layout_id"
   xcrun simctl bootstatus "$layout_id" -b
+  install_test_apps "$layout_id"
   old_appearance=$(xcrun simctl ui "$layout_id" appearance | tr '[:upper:]' '[:lower:]')
   old_content_size=$(xcrun simctl ui "$layout_id" content_size)
   xcrun simctl ui "$layout_id" appearance dark
@@ -79,3 +93,4 @@ for profile in compact tablet; do
   if [ "$layout_exit" -ne 0 ]; then exit "$layout_exit"; fi
 done
 xcrun simctl delete "$compact_id"
+bash scripts/ios-performance-check.sh "$device_id"

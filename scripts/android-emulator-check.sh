@@ -30,5 +30,6 @@ if [ "$test_exit" -eq 0 ]; then
     # the application process so force-stop really destroys the ViewModel.
     adb install -r android/app/build/outputs/apk/debug/app-debug.apk
     .venv/bin/python scripts/android-process-check.py
+    bash scripts/android-performance-check.sh
 fi
 exit "$test_exit"

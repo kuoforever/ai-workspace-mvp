@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="io.github.kuoforever.aiworkspace.MobileDocumentsTest" tests="5" failures="0" errors="0" skipped="0" time="56.441" timestamp="2026-10-02T05:44:21" hostname="localhost">
+  <properties>
+    <property name="device" value="emulator-5554 - 15" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="systemPickerImportsMarkdownAndRestoresSavedDraft" classname="io.github.kuoforever.aiworkspace.MobileDocumentsTest" time="16.067" />
+  <testcase name="deviceCacheMigratesAndRetainsTwentyReportsAcrossStoreInstances" classname="io.github.kuoforever.aiworkspace.MobileDocumentsTest" time="3.933" />
+  <testcase name="darkLargeTextKeepsDraftAndActionsReachableAcrossWindowSizes" classname="io.github.kuoforever.aiworkspace.WorkspaceAdaptationTest" time="13.335" />
+  <testcase name="recordedModelReviewCanBeContinuedOnAndroid" classname="io.github.kuoforever.aiworkspace.WorkspaceFlowTest" time="12.798" />
+  <testcase name="nativeCreateClarifyRestoreReadSourceAndExport" classname="io.github.kuoforever.aiworkspace.WorkspaceFlowTest" time="8.317" />
+</testsuite>

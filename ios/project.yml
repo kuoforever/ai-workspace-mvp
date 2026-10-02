@@ -8,7 +8,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    SWIFT_STRICT_CONCURRENCY: minimal
+    SWIFT_STRICT_CONCURRENCY: complete
     MARKETING_VERSION: "0.3.0"
     CURRENT_PROJECT_VERSION: 3
     TARGETED_DEVICE_FAMILY: "1,2"
@@ -21,6 +21,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.github.kuoforever.aiworkspace.ios
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
     info:
       path: App/Info.plist
       properties:

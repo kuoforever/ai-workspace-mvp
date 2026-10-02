@@ -5,6 +5,11 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.withStyle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -40,6 +45,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 
@@ -74,17 +80,15 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Workspace(vm: WorkspaceViewModel) {
     val state = vm.ui
+    ReportDrawnWhen { !state.loadingLocal && !state.busy }
     val context = LocalContext.current
     var connectionHelp by rememberSaveable { mutableStateOf(false) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(vm, lifecycle) {
         lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            while (true) {
-                delay(3000)
-                val current = vm.ui
-                if (current.page == Page.DETAIL && !current.busy && current.error == null &&
-                    current.review?.status in listOf("waiting_model", "running")) vm.refresh()
-            }
+            try {
+                while (true) { delay(3000); vm.poll() }
+            } finally { vm.pausePolling() }
         }
     }
     BackHandler(state.page != Page.HOME) { vm.back() }
@@ -139,6 +143,10 @@ private fun Workspace(vm: WorkspaceViewModel) {
 @Composable
 private fun StatusPanel(state: WorkspaceUi, vm: WorkspaceViewModel, help: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(state.saveState.label, style = MaterialTheme.typography.bodySmall, modifier = Modifier.testTag("save-state"))
+        if (state.saveState == SaveState.FAILED) {
+            Button(onClick = vm::retrySave, enabled = !state.busy, modifier = Modifier.testTag("retry-save")) { Text("重试保存") }
+        }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(state.connection.label, style = MaterialTheme.typography.labelMedium,
                 modifier = Modifier.padding(vertical = 14.dp).testTag("connection-status"))
@@ -167,10 +175,19 @@ private fun Notice(text: String, error: Boolean = false) {
             MaterialTheme.shapes.medium).padding(14.dp), style = MaterialTheme.typography.bodySmall)
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable () -> Unit) {
     LazyColumn(Modifier.fillMaxSize().testTag("home-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { header() }
+        item {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(!state.savedOnly, { vm.showSaved(false) }, enabled = !state.busy, label = { Text("全部评审") })
+                FilterChip(state.savedOnly, { vm.showSaved(true) }, enabled = !state.busy,
+                    label = { Text("已保存 · " + state.savedRows.size) }, modifier = Modifier.testTag("saved-library"))
+            }
+            Text("已打开的最近 20 份评审保存在设备，可离线阅读引用和分享报告。", style = MaterialTheme.typography.bodySmall)
+        }
         item {
             Text("把设计，变成有依据的判断。", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
@@ -178,10 +195,10 @@ private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable
             Spacer(Modifier.height(18.dp))
             Button(onClick = vm::createPage, enabled = state.editable, modifier = Modifier.fillMaxWidth().testTag("new-review")) { Text("新建设计评审") }
         }
-        if (state.rows.isEmpty()) item {
-            Text("还没有评审。先创建一份设计，或在电脑上提交后刷新。", style = MaterialTheme.typography.bodyMedium)
+        if ((if (state.savedOnly) state.savedRows else state.rows).isEmpty()) item {
+            Text(if (state.savedOnly) "还没有保存的评审。打开记录后，会自动保存到设备。" else "还没有评审。先创建一份设计，或在电脑上提交后刷新。", style = MaterialTheme.typography.bodyMedium)
         }
-        items(state.rows, key = { it.id }) { row ->
+        items(if (state.savedOnly) state.savedRows else state.rows, key = { it.id }) { row ->
             OutlinedCard(onClick = { vm.open(row.id) }, enabled = !state.busy, modifier = Modifier.fillMaxWidth().testTag("review:${row.id}")) {
                 Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(row.title, fontWeight = FontWeight.SemiBold)
@@ -197,6 +214,19 @@ private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable () -> Unit) {
+    val context = LocalContext.current
+    var replaceImport by rememberSaveable { mutableStateOf(false) }
+    val importer = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) vm.importDocument { readDocument(context, uri) }
+    }
+    fun chooseDocument() = importer.launch(arrayOf("text/*", "application/octet-stream"))
+    if (replaceImport) AlertDialog(
+        onDismissRequest = { replaceImport = false },
+        title = { Text("替换设计材料？") },
+        text = { Text("所选文件会替换当前设计材料。取消或导入失败会保留原草稿。") },
+        confirmButton = { TextButton(onClick = { replaceImport = false; chooseDocument() }) { Text("选择文件") } },
+        dismissButton = { TextButton(onClick = { replaceImport = false }) { Text("取消") } },
+    )
     var picker by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     val enabled = state.editable
@@ -228,14 +258,19 @@ private fun Create(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
         item { header() }
         item {
             Text("描述你的设计", style = MaterialTheme.typography.headlineSmall)
+            TextButton(onClick = {
+                if (state.draft.design.isBlank()) chooseDocument() else replaceImport = true
+            }, enabled = enabled, modifier = Modifier.testTag("import-document")) { Text("导入 Markdown / 文本") }
+            Text("支持 UTF-8 的 .md、.markdown、.txt，10–8000 字符。", style = MaterialTheme.typography.bodySmall)
             TextButton(onClick = vm::example, enabled = enabled, modifier = Modifier.testTag("fill-example")) { Text("填入演示示例") }
         }
-        item { OutlinedTextField(state.draft.title, { if (it.length <= 120) vm.edit(state.draft.copy(title = it)) },
+        item { OutlinedTextField(state.draft.title, { if (it.scalarCount() <= 120) vm.edit(state.draft.copy(title = it)) },
             enabled = enabled, label = { Text("评审名称") }, modifier = Modifier.fillMaxWidth().testTag("title"), singleLine = true) }
-        item { OutlinedTextField(state.draft.design, { if (it.length <= 8000) vm.edit(state.draft.copy(design = it)) },
-            enabled = enabled, label = { Text("设计材料") }, supportingText = { Text("${state.draft.design.length}/8000 · 草稿保存在设备") },
+        item { OutlinedTextField(state.draft.design, { if (it.scalarCount() <= 8000) vm.edit(state.draft.copy(design = it)) },
+            enabled = enabled, label = { Text("设计材料") }, supportingText = { Text("${state.draft.design.scalarCount()}/8000 · " + state.saveState.label) },
             modifier = Modifier.fillMaxWidth().bringIntoViewRequester(designRequester)
-                .onFocusChanged { designFocused = it.isFocused }.testTag("design"), minLines = if (compactEditor) 2 else 5) }
+                .onFocusChanged { designFocused = it.isFocused }.testTag("design"),
+            minLines = if (compactEditor) 2 else 5, maxLines = if (compactEditor) 8 else 10) }
         item {
             Text("检查范围 · ${state.draft.checkIds.size}/8", fontWeight = FontWeight.SemiBold)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -295,7 +330,8 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
                 Text(question.text, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(state.answers[question.id].orEmpty(), { vm.editAnswer(question.id, it) },
-                    label = { Text("你的回答") }, enabled = enabled, minLines = if (compactEditor) 2 else 3,
+                    label = { Text("你的回答") }, enabled = enabled,
+                    minLines = if (compactEditor) 2 else 3, maxLines = 8,
                     modifier = Modifier.fillMaxWidth().bringIntoViewRequester(requester)
                         .onFocusChanged { focused = it.isFocused }.testTag("answer:${question.id}"))
             }
@@ -329,14 +365,29 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
 @Composable
 private fun SourcePage(state: WorkspaceUi, header: @Composable () -> Unit) {
     val source = state.source ?: return
-    LazyColumn(Modifier.fillMaxSize().testTag("source-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    val excerpt = sourceExcerpt(source.text, state.quote)
+    val highlight = MaterialTheme.colorScheme.primaryContainer
+    var complete by rememberSaveable(source.sha256, state.quote) { mutableStateOf(false) }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         item { header() }
         item { Text("引用依据", style = MaterialTheme.typography.headlineSmall) }
-        item { Text(source.title, fontWeight = FontWeight.Bold) }
-        item { SelectionContainer { Text(state.quote, modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer).padding(16.dp)) } }
+        item { Text(source.title, fontWeight = FontWeight.SemiBold) }
+        if (excerpt != null) {
+            item { Text("原文第 " + excerpt.firstLine + "–" + excerpt.lastLine + " 行", modifier = Modifier.testTag("source-location")) }
+            item { SelectionContainer {
+                Text(buildAnnotatedString {
+                    append(excerpt.before)
+                    withStyle(SpanStyle(background = highlight, fontWeight = FontWeight.Bold)) { append(excerpt.quote) }
+                    append(excerpt.after)
+                }, modifier = Modifier.fillMaxWidth().testTag("source-context"))
+            } }
+        } else {
+            item { Text("未在此快照找到对应片段，请核对来源。", color = MaterialTheme.colorScheme.error) }
+            item { SelectionContainer { Text(state.quote) } }
+        }
         item { Text(source.path, style = MaterialTheme.typography.bodySmall) }
-        item { Text("SHA-256 ${source.sha256}", style = MaterialTheme.typography.bodySmall) }
-        item { Text("评审时保存的来源快照", fontWeight = FontWeight.SemiBold) }
-        item { SelectionContainer { Text(source.text, style = MaterialTheme.typography.bodyMedium) } }
+        item { SelectionContainer { Text("SHA-256 " + source.sha256, style = MaterialTheme.typography.bodySmall) } }
+        item { TextButton(onClick = { complete = !complete }) { Text(if (complete) "收起完整来源" else "查看完整来源") } }
+        if (complete) item { SelectionContainer { Text(source.text) } }
     }
 }

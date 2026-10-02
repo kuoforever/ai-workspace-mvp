@@ -1,0 +1,42 @@
+{
+  "devicesAndConfigurations" : [
+    {
+      "device" : {
+        "architecture" : "arm64",
+        "deviceId" : "14B8D43C-30A3-4101-A331-24A5229E02E3",
+        "deviceName" : "AI Workspace compact check",
+        "modelName" : "iPhone SE (3rd generation)",
+        "osBuildNumber" : "22F77",
+        "osVersion" : "18.5",
+        "platform" : "iOS Simulator"
+      },
+      "expectedFailures" : 0,
+      "failedTests" : 0,
+      "passedTests" : 1,
+      "skippedTests" : 0,
+      "testPlanConfiguration" : {
+        "configurationId" : "1",
+        "configurationName" : "Test Scheme Action"
+      }
+    }
+  ],
+  "environmentDescription" : "AIWorkspace · Built with macOS 15.7.9",
+  "expectedFailures" : 0,
+  "failedTests" : 0,
+  "finishTime" : 1790910669.025,
+  "passedTests" : 1,
+  "result" : "Passed",
+  "skippedTests" : 0,
+  "startTime" : 1790910559.959,
+  "statistics" : [
+
+  ],
+  "testFailures" : [
+
+  ],
+  "title" : "Test - AIWorkspace",
+  "topInsights" : [
+
+  ],
+  "totalTestCount" : 1
+}

@@ -27,12 +27,11 @@ class WorkspaceFlowTest {
         compose.waitUntil(30000) { compose.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun ready() {
-        compose.waitUntil(30000) { compose.onAllNodesWithTag("busy").fetchSemanticsNodes().isEmpty() }
-    }
+    private fun ready(tag: String = "new-review") = compose.waitForEnabled(hasTestTag(tag))
 
     private fun scrollClick(list: String, tag: String) {
         compose.onNodeWithTag(list).performScrollToNode(hasTestTag(tag))
+        ready(tag)
         compose.onNodeWithTag(tag).performClick()
     }
 
@@ -59,18 +58,20 @@ class WorkspaceFlowTest {
         ready()
         val title = "Android 模拟验收 ${UUID.randomUUID().toString().take(8)}"
         compose.onNodeWithText("新建设计评审").performClick()
+        ready("fill-example")
         compose.onNodeWithText("填入演示示例").performClick()
         compose.onNodeWithTag("title").performTextReplacement(title)
         // Activity recreation must retain the editable draft.
         compose.activityRule.scenario.recreate()
-        ready()
+        ready("title")
         compose.onNodeWithTag("title").assertTextContains(title)
         scrollClick("create-list", "submit")
         waitText("等待补充")
+        ready("answer:q1")
         shot("01-clarification")
         compose.onNodeWithTag("answer:q1").performTextInput("先查询支付状态，再对明确失败执行有限重试。")
         compose.activityRule.scenario.recreate()
-        ready()
+        ready("answer:q1")
         compose.onNodeWithTag("answer:q1").assertTextContains("先查询支付状态", substring = true)
         scrollClick("detail-list", "answer-submit")
         waitText("已完成")
@@ -117,11 +118,13 @@ class WorkspaceFlowTest {
         submitRecorded("questions")
         compose.onNodeWithText("刷新").performClick()
         waitText(title)
+        compose.waitForEnabled(hasText(title))
         compose.onNodeWithText(title).performClick()
         waitText("等待补充")
         val answers = fixture.getValue("answers").jsonObject
         for ((id, answer) in answers) {
             compose.onNodeWithTag("detail-list").performScrollToNode(hasTestTag("answer:$id"))
+            ready("answer:$id")
             compose.onNodeWithTag("answer:$id").performTextReplacement(answer.jsonPrimitive.content)
         }
         scrollClick("detail-list", "answer-submit")

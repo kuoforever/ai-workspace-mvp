@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 @MainActor struct WorkspaceView: View {
     @ObservedObject var model: WorkspaceModel
@@ -7,7 +8,7 @@ import SwiftUI
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                if model.busy { ProgressView().accessibilityIdentifier("busy").padding(6) }
+                if model.busy || model.loadingLocal { ProgressView().accessibilityIdentifier("busy").padding(6) }
                 content.frame(maxWidth: 840)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
@@ -100,6 +101,11 @@ import SwiftUI
                 }
             }
             if let message = model.startupError ?? model.error { notice(message, color: .red) }
+            Text(model.saveState.rawValue).font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("save-state")
+            if model.saveState == .failed {
+                Button("重试保存") { Task { await model.retrySave() } }
+                    .disabled(model.busy).accessibilityIdentifier("retry-save")
+            }
             if model.pending != nil {
                 notice("上次提交结果尚未确认。重试沿用原请求，输入暂时锁定。", color: .workspaceTeal)
                 Button("重试原提交") { Task { await model.retry() } }
@@ -122,16 +128,25 @@ import SwiftUI
             LazyVStack(alignment: .leading, spacing: 16) {
                 status
                 Text("把设计，变成有依据的判断。").font(.title2.bold())
-                Text(model.cached ? "显示本机缓存 · 联网后刷新" : "与电脑工作台共享评审记录")
+                Text(model.savedOnly ? "设备中的评审快照" : (model.cached ? "显示本机缓存 · 联网后刷新" : "与电脑工作台共享评审记录"))
                     .font(.footnote).foregroundStyle(.secondary)
                 Button { model.createPage() } label: {
                     Label("新建设计评审", systemImage: "plus").frame(maxWidth: .infinity).padding(.vertical, 7)
                 }.buttonStyle(.borderedProminent).tint(.workspaceButton).disabled(!model.editable).accessibilityIdentifier("new-review")
-                if model.rows.isEmpty {
-                    ContentUnavailableView("还没有评审", systemImage: "doc.text.magnifyingglass",
-                        description: Text("创建一份设计，或在电脑提交后刷新。"))
+                if (model.savedOnly ? model.savedRows : model.rows).isEmpty {
+                    ContentUnavailableView(model.savedOnly ? "还没有保存的评审" : "还没有评审", systemImage: "doc.text.magnifyingglass",
+                        description: Text(model.savedOnly ? "打开记录后，会自动保存到设备。" : "创建一份设计，或在电脑提交后刷新。"))
                 }
-                ForEach(model.rows) { row in
+                HStack {
+                    Button("全部评审") { model.showSaved(false) }.disabled(model.busy || model.loadingLocal)
+                        .tint(model.savedOnly ? .secondary : .workspaceTeal)
+                    Button("已保存 · \(model.savedRows.count)") { model.showSaved(true) }
+                        .disabled(model.busy || model.loadingLocal).accessibilityIdentifier("saved-library")
+                        .tint(model.savedOnly ? .workspaceTeal : .secondary)
+                }.buttonStyle(.bordered)
+                Text("已打开的最近 20 份评审保存在设备，可离线阅读引用和分享报告。")
+                    .font(.footnote).foregroundStyle(.secondary)
+                ForEach(model.savedOnly ? model.savedRows : model.rows) { row in
                     Button { Task { await model.open(row.id) } } label: {
                         VStack(alignment: .leading, spacing: 9) {
                             Text(row.title).font(.headline).foregroundStyle(.primary)
@@ -152,6 +167,8 @@ import SwiftUI
     let status: WorkspaceStatusView
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var choosing = false
+    @State private var importing = false
+    @State private var replaceImport = false
     @State private var query = ""
     private enum Field { case title, design }
     @FocusState private var focusedField: Field?
@@ -164,12 +181,17 @@ import SwiftUI
         Form {
             Section { status }
             Section("描述你的设计") {
+                Button("导入 Markdown / 文本", systemImage: "doc.badge.plus") {
+                    focusedField = nil
+                    if model.draft.design.isEmpty { importing = true } else { replaceImport = true }
+                }.accessibilityIdentifier("import-document")
+                Text("支持 UTF-8 的 .md、.markdown、.txt，10–8000 字符。").font(.caption).foregroundStyle(.secondary)
                 Button("填入演示示例") { model.example() }
                 TextField("评审名称", text: binding(\.title)).focused($focusedField, equals: .title)
                     .accessibilityIdentifier("review-title")
                 TextEditor(text: binding(\.design)).focused($focusedField, equals: .design)
                     .frame(minHeight: 150).accessibilityIdentifier("design")
-                Text("\(model.draft.design.unicodeScalars.count)/8000 字符 · 草稿保存在设备").font(.caption).foregroundStyle(.secondary)
+                Text("\(model.draft.design.unicodeScalars.count)/8000 字符 · \(model.saveState.rawValue)").font(.caption).foregroundStyle(.secondary)
             }.disabled(!model.editable)
             Section("检查范围 · \(model.draft.checkIDs.count)/8") {
                 Text(model.draft.checkIDs.joined(separator: " · ")).font(.subheadline)
@@ -193,6 +215,18 @@ import SwiftUI
             ToolbarItem(placement: .topBarTrailing) {
                 Button("提交评审", systemImage: "checkmark") { Task { await model.create() } }
                     .disabled(!model.editable).accessibilityIdentifier("submit")
+            }
+        }
+        .confirmationDialog("替换设计材料？", isPresented: $replaceImport, titleVisibility: .visible) {
+            Button("选择文件") { importing = true }
+        } message: { Text("所选文件会替换当前设计材料。取消或导入失败会保留原草稿。") }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [
+            .plainText, UTType(filenameExtension: "md") ?? .plainText,
+            UTType(filenameExtension: "markdown") ?? .plainText
+        ]) { result in
+            switch result {
+            case .success(let url): Task { await model.importDocument(url) }
+            case .failure(let failure): model.importFailed(failure)
             }
         }
         .sheet(isPresented: $choosing) {
@@ -310,13 +344,23 @@ import SwiftUI
                     status
                     Text("引用依据").font(.title2.bold()).accessibilityIdentifier("source-title")
                     Text(source.title).font(.headline)
-                    Text(quote).textSelection(.enabled).padding(16)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.workspaceTeal.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                    if let excerpt = sourceExcerpt(source.text, quote: quote) {
+                        Text("原文第 \(excerpt.firstLine)–\(excerpt.lastLine) 行")
+                            .font(.footnote).accessibilityIdentifier("source-location")
+                        (Text(excerpt.before) + Text(excerpt.quote).foregroundColor(.workspaceTeal).bold().underline() + Text(excerpt.after))
+                            .textSelection(.enabled).padding(16)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.workspaceTeal.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
+                            .accessibilityIdentifier("source-context")
+                    } else {
+                        Text("未在此快照找到对应片段，请核对来源。").foregroundStyle(.red)
+                        Text(quote).textSelection(.enabled)
+                    }
                     Text(source.path).font(.footnote).foregroundStyle(.secondary)
                     DisclosureGroup("来源校验信息") { Text("SHA-256 \(source.sha256)").font(.caption).textSelection(.enabled) }
-                    Text("评审时保存的来源快照").font(.headline)
-                    Text(source.text).font(.subheadline).textSelection(.enabled)
+                    DisclosureGroup("查看完整来源") {
+                        Text(source.text).font(.subheadline).textSelection(.enabled)
+                    }
                 }.frame(maxWidth: .infinity, alignment: .leading).padding(20)
             }
         }

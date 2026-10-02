@@ -27,12 +27,15 @@ enum ConnectionState: String {
     func request(_ path: String, body: Data?, key: String?) async throws -> Data {
         do {
             let result = try await base.request(path, body: body, key: key)
+            try Task.checkCancellation()
             update(.connected)
             return result
         } catch let failure as APIError {
+            try Task.checkCancellation()
             update(failure.status >= 500 ? .unavailable : .connected)
             throw failure
         } catch let failure as URLError {
+            try Task.checkCancellation()
             if failure.code != .cancelled { update(.offline) }
             throw failure
         }

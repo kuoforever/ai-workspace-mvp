@@ -34,7 +34,15 @@ macOS / Linux 使用 `./gradlew`。存在多个设备时，为 `adb` 添加 `-s 
 
 ## 状态管理
 
-ViewModel 管理页面状态；SharedPreferences 同步保存草稿和缓存，AtomicFile 保存待确认请求。连接中断或结果无法写入本机时，可以用原幂等键重试；版本冲突时保留输入并提示刷新。仅在前台等待助手时自动刷新。
+ViewModel 管理页面状态；草稿、回答、缓存和提交日志的磁盘操作通过同一串行后台执行器完成。输入立即保留在界面，显示“正在保存输入”“输入已保存”或失败提示；失败时可“重试保存”，提交前会等待最新输入落盘。SharedPreferences 保存草稿和缓存，AtomicFile 保存待确认请求。连接中断或结果无法写入本机时，可以用原幂等键重试；版本冲突时保留输入并提示刷新。仅在前台、联网查看等待助手的记录时自动刷新。
+
+## 文件与离线阅读
+
+- 创建页通过系统文件选择器导入 UTF-8 的 .md、.markdown 或 .txt。保留换行和 Markdown；材料限 10–8,000 个 Unicode 字符、文件读取限 32 KiB。编码错误、过大文件和取消选择不会替换原草稿。
+- 已有设计时先确认替换；导入后可继续编辑，文件不会自动提交，也不保留外部文件的访问权限。
+- 已打开的最近 20 份评审（包含报告与来源快照）保存在设备。“已保存”入口可直接打开任一份；已有单报告缓存会自动兼容。
+- 引用页定位到对应原文行，突出引用并展示前后文；完整来源可展开。离线也可生成当前快照的 Markdown 并打开系统分享。
+- 应用意外退出前尚处于“正在保存输入”的更改可能未落盘；保存状态不会把未完成或失败的写入显示为成功。提交仍要求先持久化原请求再发送。
 
 启动时记录损坏会进入恢复页面，保留文件并暂停写入。顶部提供连接检查和连接帮助；等待助手时可以复制当前评审的处理指令。
 
@@ -63,3 +71,19 @@ CI 还从应用进程外执行 `scripts/android-process-check.py`，验证强制
 [界面适配结果与截图](../evidence/mobile/adaptation/README.md)
 
 [测试结果与截图](../evidence/android/README.md) · [来源与依赖](../ATTRIBUTION.md)
+
+## 优化构建与性能基线
+
+Release 启用 R8 与资源缩减；benchmark 从 Release 继承优化设置，仅增加 profileable 和本机调试签名，保持 non-debuggable。CI 同时构建 Debug、Release 与 benchmark，保存混淆映射；Release APK 没有生产签名，benchmark APK 用于模拟器验证。
+
+独立 benchmark 模块使用 Macrobenchmark 1.3.4，固定 Full 编译模式：冷启动 10 次、8000 字文本批量替换及保存 5 次、20 条评审列表滚动 5 次。CI 启动独立后端、写入固定模拟资料，并仅在隔离模拟器清除该应用的数据；不会调用模型。原始 JSON 与 Perfetto 分析文件随 CI 产物保存。
+
+手动测量时准备隔离的服务与模拟器，在本目录执行：
+
+```powershell
+./gradlew.bat :benchmark:connectedBenchmarkAndroidTest "-Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR"
+```
+
+EMULATOR 是模拟器运行时唯一显式放宽的设备限制；没有放宽 debuggable 或 profileable 检查。计时结果用于同一环境的后续比较，不代表真机速度，也不据此判定生产性能达标。
+
+[模拟器质量验证](../docs/mobile-quality.md)

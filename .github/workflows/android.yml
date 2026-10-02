@@ -2,18 +2,22 @@ name: Android
 
 on:
   push:
-    paths: ["android/**", "app/**", "knowledge/**", "fixtures/**", "scripts/android-*.sh", "scripts/android-*.py", ".github/workflows/android.yml", "uv.lock"]
+    paths: ["android/**", "app/**", "knowledge/**", "fixtures/**", "scripts/android-*.sh", "scripts/android-*.py", "scripts/mobile-performance*", ".github/workflows/android.yml", "uv.lock"]
   pull_request:
-    paths: ["android/**", "app/**", "knowledge/**", "fixtures/**", "scripts/android-*.sh", "scripts/android-*.py", ".github/workflows/android.yml", "uv.lock"]
+    paths: ["android/**", "app/**", "knowledge/**", "fixtures/**", "scripts/android-*.sh", "scripts/android-*.py", "scripts/mobile-performance*", ".github/workflows/android.yml", "uv.lock"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: android-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   native:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       PYTHONUTF8: "1"
     steps:
@@ -38,7 +42,7 @@ jobs:
           done
           curl --fail --silent http://127.0.0.1:8765/api/config
       - name: Build, unit tests and Android Lint
-        run: bash android/gradlew -p android :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:lintDebug --no-daemon --stacktrace
+        run: bash android/gradlew -p android :app:assembleDebug :app:assembleRelease :app:assembleBenchmark :benchmark:assembleBenchmark :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:lintDebug :app:lintRelease --no-daemon --stacktrace
       - name: Enable emulator acceleration
         run: sudo chmod 666 /dev/kvm
       - name: Native integration on Android 15
@@ -59,6 +63,11 @@ jobs:
           retention-days: 14
           path: |
             android/app/build/outputs/apk/debug/*.apk
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/apk/benchmark/*.apk
+            android/app/build/outputs/mapping/release/
+            android/app/build/outputs/mapping/benchmark/
+            android/benchmark/build/outputs/
             android/app/build/reports/
             android/app/build/outputs/androidTest-results/
             android-evidence/

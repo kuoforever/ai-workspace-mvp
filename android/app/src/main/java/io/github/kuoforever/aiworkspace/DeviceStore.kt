@@ -19,14 +19,17 @@ interface WorkspaceStore : CommandStore {
     fun answers(id: String): Map<String, String>
     fun saveAnswers(id: String, answers: Map<String, String>)
     fun cachedReview(): ReviewSnapshot?
+    fun cachedReviews(): List<ReviewSnapshot> = listOfNotNull(cachedReview())
+    fun cachedReview(id: String): ReviewSnapshot? = cachedReviews().firstOrNull { it.id == id }
     fun saveReview(review: ReviewSnapshot)
     fun cachedList(): List<ReviewSummary>
     fun saveList(rows: List<ReviewSummary>)
 }
 
 class DeviceStore(context: Context) : WorkspaceStore {
-    private val preferences = context.getSharedPreferences("workspace-drafts", Context.MODE_PRIVATE)
-    private val journal = AtomicFile(File(context.filesDir, "pending-command.json"))
+    private val appContext = context.applicationContext ?: context
+    private val preferences by lazy { appContext.getSharedPreferences("workspace-drafts", Context.MODE_PRIVATE) }
+    private val journal by lazy { AtomicFile(File(appContext.filesDir, "pending-command.json")) }
 
     private inline fun <T> local(block: () -> T): T = try { block() }
         catch (failure: Exception) { throw LocalDataFailure(failure) }
@@ -69,7 +72,31 @@ class DeviceStore(context: Context) : WorkspaceStore {
         preferences.getString("review", null)?.let { wireJson.decodeFromString<ReviewSnapshot>(it) }
     }
 
-    override fun saveReview(review: ReviewSnapshot) = save("review", wireJson.encodeToString(review))
+    override fun cachedReviews(): List<ReviewSnapshot> = local {
+        val ids = preferences.getString("saved-review-ids", null)?.let {
+            wireJson.decodeFromString<List<String>>(it)
+        }.orEmpty()
+        val saved = ids.map { id ->
+            val body = preferences.getString("review:$id", null)
+                ?: throw IOException("Saved report is missing")
+            wireJson.decodeFromString<ReviewSnapshot>(body)
+        }
+        val legacy = cachedReview()
+        if (legacy != null && saved.none { it.id == legacy.id }) listOf(legacy) + saved else saved
+    }
+
+    override fun saveReview(review: ReviewSnapshot) = local {
+        val previous = cachedReviews()
+        val ids = (listOf(review.id) + previous.map { it.id }.filter { it != review.id }).take(20)
+        val body = wireJson.encodeToString(review)
+        val editor = preferences.edit().putString("review", body).putString("review:" + review.id, body)
+            .putString("saved-review-ids", wireJson.encodeToString(ids))
+        previous.filter { it.id in ids && it.id != review.id }.forEach {
+            editor.putString("review:" + it.id, wireJson.encodeToString(it))
+        }
+        previous.filter { it.id !in ids }.forEach { editor.remove("review:" + it.id) }
+        if (!editor.commit()) throw IOException("Storage write failed")
+    }
 
     override fun cachedList(): List<ReviewSummary> = local {
         preferences.getString("list", null)?.let { wireJson.decodeFromString<List<ReviewSummary>>(it) } ?: emptyList()

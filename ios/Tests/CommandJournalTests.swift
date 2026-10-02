@@ -2,7 +2,7 @@ import XCTest
 @testable import AIWorkspace
 
 @MainActor final class CommandJournalTests: XCTestCase {
-    private final class MemoryStore: CommandStore {
+    private final class MemoryStore: CommandStore, @unchecked Sendable {
         var value: PendingCommand?
         var failWrites = false
         var failClear = false
@@ -36,10 +36,10 @@ import XCTest
             if committed.insert(key!).inserted { throw URLError(.networkConnectionLost) }
             return result
         }
-        let journal = try CommandJournal(store: DeviceStore(root: root), api: api)
+        let journal = try await CommandJournal(store: DeviceStore(root: root), api: api)
         do { _ = try await journal.send(command); XCTFail("Expected lost reply") } catch is URLError { }
         let restoredStore = try DeviceStore(root: root)
-        let restored = try CommandJournal(store: restoredStore, api: api)
+        let restored = try await CommandJournal(store: restoredStore, api: api)
         XCTAssertEqual(api.calls.count, 1, "Loading must not send automatically")
         XCTAssertEqual(restored.pending, command)
         let saved = try await restored.send()
@@ -51,7 +51,7 @@ import XCTest
     func testCannotReplaceAnUnconfirmedRequest() async throws {
         let store = MemoryStore(); store.value = command
         let api = FakeAPI { _, _, _ in XCTFail("Must not send"); return Data() }
-        let journal = try CommandJournal(store: store, api: api)
+        let journal = try await CommandJournal(store: store, api: api)
         do {
             _ = try await journal.send(PendingCommand(key: "new", path: "/reviews", body: Data(), kind: "create"))
             XCTFail("Must preserve the original request")
@@ -62,7 +62,7 @@ import XCTest
     func testFailedLocalWriteNeverReachesNetwork() async throws {
         let store = MemoryStore(); store.failWrites = true
         let api = FakeAPI { _, _, _ in Data() }
-        let journal = try CommandJournal(store: store, api: api)
+        let journal = try await CommandJournal(store: store, api: api)
         do { _ = try await journal.send(command); XCTFail("Expected write failure") } catch is CocoaError { }
         XCTAssertTrue(api.calls.isEmpty)
     }
@@ -70,7 +70,7 @@ import XCTest
         for status in [409, 503] {
             let store = MemoryStore()
             let api = FakeAPI { _, _, _ in throw APIError(status: status, message: "rejected") }
-            let journal = try CommandJournal(store: store, api: api)
+            let journal = try await CommandJournal(store: store, api: api)
             do { _ = try await journal.send(command); XCTFail("Expected HTTP failure") } catch is APIError { }
             XCTAssertEqual(store.value, status == 409 ? nil : command)
         }
@@ -78,7 +78,7 @@ import XCTest
     func testInvalidSuccessBodyKeepsTheRetryIdentity() async throws {
         let store = MemoryStore()
         let api = FakeAPI { _, _, _ in Data("truncated".utf8) }
-        let journal = try CommandJournal(store: store, api: api)
+        let journal = try await CommandJournal(store: store, api: api)
         do { _ = try await journal.send(command); XCTFail("Expected invalid body") } catch is DecodingError { }
         XCTAssertEqual(store.value, command)
     }
@@ -86,7 +86,7 @@ import XCTest
         let store = MemoryStore(); store.failClear = true
         let result = response
         let api = FakeAPI { _, _, _ in result }
-        let journal = try CommandJournal(store: store, api: api)
+        let journal = try await CommandJournal(store: store, api: api)
         do { _ = try await journal.send(command); XCTFail("Expected clear failure") } catch is CocoaError { }
         XCTAssertEqual(journal.pending, command)
         store.failClear = false
@@ -100,14 +100,14 @@ import XCTest
         let store = try DeviceStore(root: root)
         try Data("broken".utf8).write(to: root.appendingPathComponent("pending-command.json"))
         let api = FakeAPI { _, _, _ in Data() }
-        XCTAssertThrowsError(try CommandJournal(store: store, api: api))
+        do { _ = try await CommandJournal(store: store, api: api); XCTFail("Corruption must fail startup") } catch { }
         XCTAssertTrue(api.calls.isEmpty)
     }
     func testFailedResponsePersistenceKeepsOriginalRequest() async throws {
         let store = MemoryStore()
         let result = response
         let api = FakeAPI { _, _, _ in result }
-        let journal = try CommandJournal(store: store, api: api)
+        let journal = try await CommandJournal(store: store, api: api)
         do {
             _ = try await journal.send(command) { _ in throw CocoaError(.fileWriteOutOfSpace) }
             XCTFail("Local persistence must finish before acknowledging the command")
