@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
-simulator_id="$1"
 mkdir -p ios-evidence/performance
+xcodebuild -version >ios-evidence/performance/xcode-version.txt
+xcodegen --version >ios-evidence/performance/xcodegen-version.txt
+xcrun simctl list devices available --json >ios-evidence/performance/devices.json
+simulator_id="${1:-}"
+if [ -z "$simulator_id" ]; then
+    simulator_id=$(.venv/bin/python -c 'import json; d=json.load(open("ios-evidence/performance/devices.json")); print(next(v["udid"] for k,rows in d["devices"].items() if k.endswith("iOS-18-5") for v in rows if v["name"]=="iPhone 16"))')
+fi
+printf '%s\n' "$simulator_id" >ios-evidence/performance/device-id.txt
+bash ios/generate.sh
 if [ "${GITHUB_ACTIONS:-}" = true ]; then bash scripts/mobile-performance-service.sh ios; fi
 .venv/bin/python scripts/mobile-performance-fixture.py --out ios-evidence/performance/fixture.json
 xcodebuild build-for-testing -configuration Release -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
@@ -10,13 +18,13 @@ xcodebuild build-for-testing -configuration Release -project ios/AIWorkspace.xco
     >ios-evidence/performance/build.log 2>&1 || { tail -100 ios-evidence/performance/build.log; exit 1; }
 xcodebuild -configuration Release -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
     -destination "platform=iOS Simulator,id=$simulator_id" -derivedDataPath ios/build/performance \
-    CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES -enableCodeCoverage NO \
+    CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES \
     -showBuildSettings >ios-evidence/performance/build-settings.txt
 lipo -archs ios/build/performance/Build/Products/Release-iphonesimulator/AIWorkspace.app/AIWorkspace \
     >ios-evidence/performance/architectures.txt
 ditto -c -k --sequesterRsrc --keepParent ios/build/performance/Build/Products/Release-iphonesimulator/AIWorkspace.app \
     ios-evidence/performance/AIWorkspace-release-simulator.app.zip
-xcrun simctl boot "$simulator_id"
+xcrun simctl boot "$simulator_id" || true
 xcrun simctl bootstatus "$simulator_id" -b
 for app_bundle in AIWorkspace.app AIWorkspaceUITests-Runner.app; do
     xcrun simctl install "$simulator_id" "ios/build/performance/Build/Products/Release-iphonesimulator/$app_bundle"

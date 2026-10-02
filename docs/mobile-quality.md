@@ -33,6 +33,8 @@ CI 性能阶段使用独立数据目录的后端和固定程序生成资料，�
 - iOS：ios-evidence/performance/summary.json、fixture.json、原始 metrics.json、tests.log、Performance.xcresult 与构建设置。
 - 结果解析：scripts/mobile-performance-summary.py；固定资料：scripts/mobile-performance-fixture.py。
 
+iOS 默认运行全部检查；手动调度时可选 performance_only，只重复优化构建和三个性能场景。该模式的成功不代表重新跑过功能测试，引用既有功能结果时需核对应用及功能测试源码没有变化。
+
 解析工具要求全部场景均有有效测量样本，保留原始值，并按线性插值计算 P50/P95。Android 帧时长的统计样本是采集到的帧；启动和 iOS 管线的样本是重复执行次数。两者不能混作相同样本单位。
 
 Android 的 frameOverrunMs 是相对帧截止时间的差值，负数表示提前完成，并非无效耗时；普通时长仍禁止负值。

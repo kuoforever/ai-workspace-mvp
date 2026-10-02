@@ -6,6 +6,11 @@ on:
   pull_request:
     paths: ["ios/**", "app/**", "knowledge/**", "fixtures/**", "scripts/ios*.sh", "scripts/mobile-performance*", ".github/workflows/ios.yml", "uv.lock"]
   workflow_dispatch:
+    inputs:
+      performance_only:
+        description: "Measure optimized simulator workloads without repeating functional tests"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -21,6 +26,7 @@ jobs:
     env:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       PYTHONUTF8: "1"
+      PERFORMANCE_ONLY: ${{ inputs.performance_only && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
@@ -39,7 +45,12 @@ jobs:
           done
           curl --fail --silent http://localhost:8765/api/config
       - name: Build, unit tests and native simulator flows
-        run: bash scripts/ios-simulator-check.sh
+        run: |
+          if [ "$PERFORMANCE_ONLY" = true ]; then
+            bash scripts/ios-performance-check.sh
+          else
+            bash scripts/ios-simulator-check.sh
+          fi
       - name: Upload simulator application and test evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
