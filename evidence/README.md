@@ -1,14 +1,14 @@
 # 测试报告
 
-这里保存发布版本的测试摘要、接口快照和截图。运行环境、源码提交及产物摘要记录在各报告中。
+这里保存各次验证的测试摘要、接口快照和截图。运行环境、源码提交及产物摘要记录在各报告中。
 
 ## 自动化检查
 
 | 范围 | 已记录结果 | 环境 | 报告 |
 |---|---|---|---|
-| 后端与协议 | 24 项测试通过 | Windows / Ubuntu，Python 3.12 | [CI](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36662906201) |
-| Android | 9 项单元测试、3 条界面流程、6 项进程外检查通过 | Android 15 / API 35 模拟器，小屏与宽窗口 | [界面适配](mobile/adaptation/README.md) |
-| iOS | 10 项单元测试、3 条界面流程，另两种设备字号组合通过 | iPhone 16、iPhone SE、iPad Pro / iOS 18.5 | [界面适配](mobile/adaptation/README.md) |
+| 后端与协议 | 24 项测试通过 | Windows / Ubuntu，Python 3.12 | [CI](https://github.com/kuoforever/ai-workspace-mvp/actions/runs/36957786983) |
+| Android | 22 项单元测试、5 项设备测试、6 项进程外检查通过 | Android 15 / API 35 模拟器，小屏与宽窗口 | [文件与后台保存](mobile/documents/README.md) |
+| iOS | 20 项单元测试、5 条界面流程，另两种设备字号组合通过 | iPhone 16、iPhone SE、iPad Pro / iOS 18.5 | [文件与后台保存](mobile/documents/README.md) |
 
 客户端流程使用模拟数据和已保存的模型输出回放；真实 MCP 生成记录与模拟器回放分别保存。模型输出质量另见[评测文档](../evals/README.md)。本地复现命令见[开发指南](../docs/development.md)。早期发布记录见 [Android v0.2.0](android/README.md) 和 [iOS v0.3.0](ios/README.md)。
 
