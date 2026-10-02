@@ -65,6 +65,12 @@ final class WorkspaceFlowTests: XCTestCase {
         let button = app.buttons["keyboard-dismiss"]
         if button.waitForExistence(timeout: 2), button.isHittable { button.tap() }
     }
+    private func waitSaved() {
+        let label = app.staticTexts["save-state"]
+        let expectation = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND label == %@", "输入已保存"), object: label)
+        XCTAssertEqual(XCTWaiter.wait(for: [expectation], timeout: 20), .completed,
+            "Restart only after the latest input has been acknowledged as saved")
+    }
     private func shot(_ name: String) {
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name
@@ -178,6 +184,7 @@ final class WorkspaceFlowTests: XCTestCase {
         let design = app.textViews["design"]
         design.tap(); design.typeText("Order API retries payment on timeout without checking payment status.")
         dismissKeyboard()
+        waitSaved()
         app.terminate(); app.launch()
         tap(app.buttons["new-review"])
         XCTAssertEqual(app.textFields["review-title"].value as? String, title)
@@ -194,6 +201,7 @@ final class WorkspaceFlowTests: XCTestCase {
         let input = app.textViews["answer:q1"]
         tap(input); input.typeText(answer)
         dismissKeyboard()
+        waitSaved()
         app.terminate(); app.launch()
         tap(app.buttons["review:" + id])
         XCTAssertTrue(app.textViews["answer:q1"].waitForExistence(timeout: 15))

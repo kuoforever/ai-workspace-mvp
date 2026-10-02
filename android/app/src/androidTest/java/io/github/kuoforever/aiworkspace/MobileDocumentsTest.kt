@@ -68,7 +68,8 @@ class MobileDocumentsTest {
     }
 
     @Test fun deviceCacheMigratesAndRetainsTwentyReportsAcrossStoreInstances() = runBlocking<Unit> {
-        val context = InstrumentationRegistry.getInstrumentation().context
+        // Instrumentation code runs under the target UID, so use that app's writable storage.
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.getSharedPreferences("workspace-drafts", 0).edit().clear().commit()
         val store = DeviceStore(context)
         fun snapshot(id: String) = ReviewSnapshot(id, 1, "completed", ReviewInput(title = id), emptyMap())

@@ -27,8 +27,10 @@ class WorkspaceViewModelTest {
         var brokenCache = false
         var failSave = false
         var failDraft = false
+        var failAnswers = false
         var draftHook: (() -> Unit)? = null
         val reports = linkedMapOf<String, ReviewSnapshot>()
+        val savedAnswers = mutableMapOf<String, Map<String, String>>()
         override fun pending(): PendingCommand? {
             if (brokenJournal) throw LocalDataFailure(IOException("corrupt journal"))
             return command
@@ -40,8 +42,11 @@ class WorkspaceViewModelTest {
             if (failDraft) throw LocalDataFailure(IOException("disk full"))
             input = draft
         }
-        override fun answers(id: String) = emptyMap<String, String>()
-        override fun saveAnswers(id: String, answers: Map<String, String>) { }
+        override fun answers(id: String) = savedAnswers[id].orEmpty()
+        override fun saveAnswers(id: String, answers: Map<String, String>) {
+            if (failAnswers) throw LocalDataFailure(IOException("disk full"))
+            savedAnswers[id] = answers
+        }
         override fun cachedReview(): ReviewSnapshot? = reports.values.lastOrNull()
         override fun cachedReviews() = reports.values.toList()
         override fun saveReview(review: ReviewSnapshot) {
@@ -173,6 +178,37 @@ class WorkspaceViewModelTest {
         while (vm.ui.busy || vm.ui.saveState == SaveState.SAVING) kotlinx.coroutines.delay(1)
         assertEquals(SaveState.SAVED, vm.ui.saveState)
         assertEquals("latest", store.input.title)
+    }
+
+    @Test fun failedAnswerSaveIsNotOverwrittenByRefreshOrReopen() {
+        val api = API()
+        val store = Store().apply {
+            reports["answer-review"] = ReviewSnapshot("answer-review", 2, "waiting_input", ReviewInput(),
+                emptyMap(), questions = listOf(Question("q1", "How are timeouts handled?")))
+            savedAnswers["answer-review"] = mapOf("q1" to "old answer")
+            failAnswers = true
+        }
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
+        vm.showSaved(true); vm.open("answer-review")
+        vm.editAnswer("q1", "latest answer")
+        val calls = api.calls.size
+        vm.refresh(); vm.open("answer-review"); vm.answer()
+        assertEquals("latest answer", vm.ui.answers["q1"])
+        assertEquals(SaveState.FAILED, vm.ui.saveState)
+        assertEquals(calls, api.calls.size)
+        store.failAnswers = false
+        vm.retrySave(); vm.open("answer-review")
+        assertEquals("latest answer", vm.ui.answers["q1"])
+        assertEquals(SaveState.SAVED, vm.ui.saveState)
+    }
+
+    @Test fun creatingFromSavedLibraryStillPollsLiveReview() {
+        val vm = WorkspaceViewModel(API(), Store(), DiskExecutor(dispatcher))
+        vm.showSaved(true); vm.createPage()
+        vm.edit(ReviewInput(title = "Orders", design = "Query payment status before retrying."))
+        vm.create()
+        assertTrue(vm.ui.shouldPoll)
+        assertFalse(vm.ui.copy(cached = true).shouldPoll)
     }
 
     @Test fun importedDraftAndOfflineReportsDoNotDependOnNetwork() {

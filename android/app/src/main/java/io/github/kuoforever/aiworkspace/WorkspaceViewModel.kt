@@ -35,7 +35,11 @@ data class WorkspaceUi(
     val pending: PendingCommand? = null,
     val startupError: String? = null,
     val connection: Connection = Connection.UNKNOWN,
-) { val editable: Boolean get() = !busy && !loadingLocal && pending == null && startupError == null }
+) {
+    val editable: Boolean get() = !busy && !loadingLocal && pending == null && startupError == null
+    val shouldPoll: Boolean get() = page == Page.DETAIL && !cached && !busy && error == null &&
+        review?.status in listOf("waiting_model", "running")
+}
 
 class WorkspaceViewModel(
     private val api: WorkspaceApi,
@@ -106,6 +110,7 @@ class WorkspaceViewModel(
     }
 
     fun refresh() = operation {
+        if (ui.page == Page.DETAIL) edits.flush()
         if (ui.page == Page.HOME && ui.savedOnly) {
             val rows = disk.run { store.cachedReviews().map { it.summary() } }
             ui = ui.copy(savedRows = rows)
@@ -226,6 +231,7 @@ class WorkspaceViewModel(
     }
 
     fun open(id: String) = operation {
+        edits.flush()
         val cached = disk.run { store.cachedReview(id) }
         val answers = disk.run { store.answers(id) }
         ui = ui.copy(page = Page.DETAIL, selectedId = id, review = cached, answers = answers, cached = true)

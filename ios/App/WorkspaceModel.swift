@@ -58,7 +58,7 @@ enum Page: Equatable { case home, create, detail, source, export }
     }
     var editable: Bool { !busy && !loadingLocal && pending == nil && startupError == nil }
     var shouldPoll: Bool {
-        !cached && !savedOnly && page == .detail && !busy && error == nil &&
+        !cached && page == .detail && !busy && error == nil &&
             ["waiting_model", "running"].contains(review?.status ?? "")
     }
     private func operation(_ work: () async throws -> Void) async {
@@ -80,6 +80,7 @@ enum Page: Equatable { case home, create, detail, source, export }
     func refresh() async {
         await operation {
             guard let store = self.store else { return }
+            if self.page == .detail { try await self.edits.flush() }
             if self.page == .home && self.savedOnly {
                 let local = try await self.disk.run { try store.savedReviews().map(\.summary) }
                 self.savedRows = local
@@ -118,6 +119,7 @@ enum Page: Equatable { case home, create, detail, source, export }
     func open(_ id: String) async {
         await operation {
             guard let store = self.store else { return }
+            try await self.edits.flush()
             let local = try await self.disk.run { (try store.cachedReview(id), try store.answers(id)) }
             self.selectedID = id; self.review = local.0; self.answers = local.1
             self.page = .detail; self.cached = true

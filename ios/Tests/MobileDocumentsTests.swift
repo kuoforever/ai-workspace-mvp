@@ -105,9 +105,35 @@ import XCTest
         XCTAssertEqual(model.answers["q1"], "最新回答：先查询状态，再决定重试。")
         XCTAssertEqual(model.saveState, .failed)
         XCTAssertEqual(api.writes, 0)
+        let calls = api.calls
+        await model.refresh()
+        await model.open(id)
+        XCTAssertEqual(model.answers["q1"], "最新回答：先查询状态，再决定重试。")
+        XCTAssertEqual(api.calls, calls, "Refresh and reopening must wait for unsaved answers")
         try FileManager.default.removeItem(at: file)
         await model.retrySave()
         XCTAssertEqual(try store.answers(id)["q1"], "最新回答：先查询状态，再决定重试。")
+    }
+
+    func testCreatingFromSavedLibraryStillPollsLiveReview() async throws {
+        final class LiveAPI: WorkspaceAPI {
+            func request(_ path: String, body: Data?, key: String?) async throws -> Data {
+                if body == nil { return Data("[]".utf8) }
+                return try Wire.encode(ReviewSnapshot(id: "new-live-review", revision: 1, status: "waiting_model",
+                    input: ReviewInput(), sources: [:], questions: [], answers: [:], report: nil, error: nil))
+            }
+        }
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = WorkspaceModel(api: LiveAPI(), store: try DeviceStore(root: root))
+        await model.waitUntilLoaded()
+        model.showSaved(true)
+        await model.refresh()
+        model.createPage()
+        model.edit(ReviewInput(title: "订单", design: "订单超时后先查询状态，再决定重试。"))
+        await model.create()
+        XCTAssertTrue(model.shouldPoll)
+        XCTAssertEqual(model.review?.id, "new-live-review")
     }
     func testLegacyCacheMigratesAndMultipleReportsRemainOfflineAfterReload() async throws {
         let root = temporaryRoot()

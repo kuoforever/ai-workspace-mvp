@@ -87,8 +87,7 @@ private fun Workspace(vm: WorkspaceViewModel) {
             while (true) {
                 delay(3000)
                 val current = vm.ui
-                if (current.page == Page.DETAIL && !current.cached && !current.savedOnly && !current.busy && current.error == null &&
-                    current.review?.status in listOf("waiting_model", "running")) vm.refresh()
+                if (current.shouldPoll) vm.refresh()
             }
         }
     }
