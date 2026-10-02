@@ -111,8 +111,11 @@ final class WorkspaceFlowTests: XCTestCase {
         let original = field.value as? String
         tap(app.buttons["import-document"])
         if app.buttons["选择文件"].waitForExistence(timeout: 2) { tap(app.buttons["选择文件"]) }
-        let cancel = app.buttons["取消"].exists ? app.buttons["取消"] : app.buttons["Cancel"]
-        XCTAssertTrue(cancel.waitForExistence(timeout: 15))
+        let picker = app.navigationBars["FullDocumentManagerViewControllerNavigationBar"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 20), "The native document picker must be presented")
+        let cancel = picker.buttons.matching(NSPredicate(format: "label == %@ OR label == %@", "取消", "Cancel")).firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 20))
+        shot("documents-system-picker")
         cancel.tap()
         XCTAssertTrue(field.waitForExistence(timeout: 10))
         XCTAssertEqual(field.value as? String, original)
