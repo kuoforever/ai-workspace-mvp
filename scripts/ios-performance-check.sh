@@ -9,7 +9,9 @@ xcodebuild build-for-testing -configuration Release -project ios/AIWorkspace.xco
     CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES -enableCodeCoverage NO -parallel-testing-enabled NO \
     >ios-evidence/performance/build.log 2>&1 || { tail -100 ios-evidence/performance/build.log; exit 1; }
 xcodebuild -configuration Release -project ios/AIWorkspace.xcodeproj -scheme AIWorkspace \
-    ENABLE_TESTABILITY=YES -showBuildSettings >ios-evidence/performance/build-settings.txt
+    -destination "platform=iOS Simulator,id=$simulator_id" -derivedDataPath ios/build/performance \
+    CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO ENABLE_TESTABILITY=YES -enableCodeCoverage NO \
+    -showBuildSettings >ios-evidence/performance/build-settings.txt
 lipo -archs ios/build/performance/Build/Products/Release-iphonesimulator/AIWorkspace.app/AIWorkspace \
     >ios-evidence/performance/architectures.txt
 ditto -c -k --sequesterRsrc --keepParent ios/build/performance/Build/Products/Release-iphonesimulator/AIWorkspace.app \

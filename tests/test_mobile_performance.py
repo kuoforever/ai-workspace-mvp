@@ -28,7 +28,10 @@ def test_android_keeps_per_iteration_and_per_frame_samples(tmp_path):
             {
                 "name": name,
                 "metrics": {"timeToInitialDisplayMs": {"runs": [1, 2, 3, 4, 5]}},
-                "sampledMetrics": {"frameDurationCpuMs": {"runs": [[1, 2], [3, 4, 5]]}},
+                "sampledMetrics": {
+                    "frameDurationCpuMs": {"runs": [[1, 2], [3, 4, 5]]},
+                    "frameOverrunMs": {"runs": [[-5, -4], [-3, -2, 1]]},
+                },
             }
             for name in ["coldLaunch", "pasteEightThousandCharacters", "scrollTwentyReviewRows"]
         ],
@@ -36,9 +39,11 @@ def test_android_keeps_per_iteration_and_per_frame_samples(tmp_path):
     (tmp_path / "benchmarkData.json").write_text(json.dumps(data), encoding="utf-8")
     result = HELPER["summarize"]("android", tmp_path)
     assert result["environment"] == "simulator"
-    assert len(result["measurements"]) == 6
+    assert len(result["measurements"]) == 9
     assert result["measurements"][1]["iterations"] == 2
     assert result["measurements"][1]["samples"] == [1, 2, 3, 4, 5]
+    assert result["measurements"][2]["p50"] == -3
+    assert result["measurements"][2]["samples"] == [-5, -4, -3, -2, 1]
 
 
 def test_ios_requires_all_measured_workloads(tmp_path):

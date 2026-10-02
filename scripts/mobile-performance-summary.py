@@ -56,7 +56,8 @@ def android_measurements(root: Path) -> tuple[list[dict], list[dict]]:
                             "source": str(path.relative_to(root)),
                             "group": group,
                             "iterations": len(runs),
-                            **describe(samples),
+                            # A negative overrun means the frame met its deadline.
+                            **describe(samples, allow_negative=name == "frameOverrunMs"),
                         }
                     )
     return measurements, contexts
