@@ -1,6 +1,8 @@
 package io.github.kuoforever.aiworkspace
 
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -25,6 +27,7 @@ class WorkspaceViewModelTest {
         var brokenCache = false
         var failSave = false
         var failDraft = false
+        var draftHook: (() -> Unit)? = null
         val reports = linkedMapOf<String, ReviewSnapshot>()
         override fun pending(): PendingCommand? {
             if (brokenJournal) throw LocalDataFailure(IOException("corrupt journal"))
@@ -33,6 +36,7 @@ class WorkspaceViewModelTest {
         override fun savePending(command: PendingCommand?) { this.command = command }
         override fun draft() = input
         override fun saveDraft(draft: ReviewInput) {
+            draftHook?.invoke()
             if (failDraft) throw LocalDataFailure(IOException("disk full"))
             input = draft
         }
@@ -144,6 +148,31 @@ class WorkspaceViewModelTest {
         vm.retrySave()
         assertEquals(SaveState.SAVED, vm.ui.saveState)
         assertEquals(input, store.input)
+    }
+
+    @Test fun slowStorageDoesNotBlockTypingOrRestoreAnOlderEdit() = kotlinx.coroutines.runBlocking {
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val caller = Thread.currentThread()
+        val store = Store().apply { draftHook = {
+            assertNotSame(caller, Thread.currentThread())
+            entered.countDown()
+            check(release.await(5, TimeUnit.SECONDS))
+        } }
+        val vm = WorkspaceViewModel(API(), store)
+        while (vm.ui.busy) kotlinx.coroutines.delay(1)
+        try {
+            vm.edit(ReviewInput(title = "first", design = "Query payment status before retrying."))
+            assertTrue(entered.await(2, TimeUnit.SECONDS))
+            val latest = vm.ui.draft.copy(title = "latest")
+            vm.edit(latest)
+            assertEquals(latest, vm.ui.draft)
+            assertEquals(SaveState.SAVING, vm.ui.saveState)
+        } finally { release.countDown() }
+        vm.retrySave()
+        while (vm.ui.busy || vm.ui.saveState == SaveState.SAVING) kotlinx.coroutines.delay(1)
+        assertEquals(SaveState.SAVED, vm.ui.saveState)
+        assertEquals("latest", store.input.title)
     }
 
     @Test fun importedDraftAndOfflineReportsDoNotDependOnNetwork() {

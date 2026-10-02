@@ -128,19 +128,21 @@ import UniformTypeIdentifiers
             LazyVStack(alignment: .leading, spacing: 16) {
                 status
                 Text("把设计，变成有依据的判断。").font(.title2.bold())
-                Text(model.cached ? "显示本机缓存 · 联网后刷新" : "与电脑工作台共享评审记录")
+                Text(model.savedOnly ? "设备中的评审快照" : (model.cached ? "显示本机缓存 · 联网后刷新" : "与电脑工作台共享评审记录"))
                     .font(.footnote).foregroundStyle(.secondary)
                 Button { model.createPage() } label: {
                     Label("新建设计评审", systemImage: "plus").frame(maxWidth: .infinity).padding(.vertical, 7)
                 }.buttonStyle(.borderedProminent).tint(.workspaceButton).disabled(!model.editable).accessibilityIdentifier("new-review")
                 if (model.savedOnly ? model.savedRows : model.rows).isEmpty {
-                    ContentUnavailableView("还没有评审", systemImage: "doc.text.magnifyingglass",
-                        description: Text("创建一份设计，或在电脑提交后刷新。"))
+                    ContentUnavailableView(model.savedOnly ? "还没有保存的评审" : "还没有评审", systemImage: "doc.text.magnifyingglass",
+                        description: Text(model.savedOnly ? "打开记录后，会自动保存到设备。" : "创建一份设计，或在电脑提交后刷新。"))
                 }
                 HStack {
-                    Button("全部评审") { model.showSaved(false) }.disabled(model.busy)
+                    Button("全部评审") { model.showSaved(false) }.disabled(model.busy || model.loadingLocal)
+                        .tint(model.savedOnly ? .secondary : .workspaceTeal)
                     Button("已保存 · \(model.savedRows.count)") { model.showSaved(true) }
                         .disabled(model.busy || model.loadingLocal).accessibilityIdentifier("saved-library")
+                        .tint(model.savedOnly ? .workspaceTeal : .secondary)
                 }.buttonStyle(.bordered)
                 Text("已打开的最近 20 份评审保存在设备，可离线阅读引用和分享报告。")
                     .font(.footnote).foregroundStyle(.secondary)

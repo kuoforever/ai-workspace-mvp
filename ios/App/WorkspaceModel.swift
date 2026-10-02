@@ -6,6 +6,7 @@ enum Page: Equatable { case home, create, detail, source, export }
 @MainActor final class WorkspaceModel: ObservableObject {
     @Published var page: Page = .home
     @Published private(set) var rows: [ReviewSummary] = []
+    @Published private(set) var checks: [CheckCard] = []
     @Published private(set) var savedRows: [ReviewSummary] = []
     @Published private(set) var savedOnly = false
     @Published private(set) var draft = ReviewInput()

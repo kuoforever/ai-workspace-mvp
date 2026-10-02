@@ -84,6 +84,31 @@ import XCTest
         await model.importDocument(file)
         XCTAssertEqual(model.draft.design, content)
     }
+    func testFailedAnswerSaveKeepsInputAndPreventsSubmission() async throws {
+        let root = temporaryRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = try DeviceStore(root: root)
+        let id = "answer-review"
+        let review = ReviewSnapshot(id: id, revision: 2, status: "waiting_input", input: ReviewInput(),
+            sources: [:], questions: [Question(id: "q1", text: "如何处理超时？")], answers: [:], report: nil, error: nil)
+        try store.saveReview(review)
+        let api = API()
+        let model = WorkspaceModel(api: api, store: store)
+        await model.waitUntilLoaded()
+        model.showSaved(true)
+        await model.refresh()
+        await model.open(id)
+        let file = root.appendingPathComponent("answers-" + Data(id.utf8).map { String(format: "%02x", $0) }.joined() + ".json")
+        try FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
+        model.editAnswer("q1", "最新回答：先查询状态，再决定重试。")
+        await model.answer()
+        XCTAssertEqual(model.answers["q1"], "最新回答：先查询状态，再决定重试。")
+        XCTAssertEqual(model.saveState, .failed)
+        XCTAssertEqual(api.writes, 0)
+        try FileManager.default.removeItem(at: file)
+        await model.retrySave()
+        XCTAssertEqual(try store.answers(id)["q1"], "最新回答：先查询状态，再决定重试。")
+    }
     func testLegacyCacheMigratesAndMultipleReportsRemainOfflineAfterReload() async throws {
         let root = temporaryRoot()
         defer { try? FileManager.default.removeItem(at: root) }

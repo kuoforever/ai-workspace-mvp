@@ -27,7 +27,7 @@ interface WorkspaceStore : CommandStore {
 }
 
 class DeviceStore(context: Context) : WorkspaceStore {
-    private val appContext = context.applicationContext
+    private val appContext = context.applicationContext ?: context
     private val preferences by lazy { appContext.getSharedPreferences("workspace-drafts", Context.MODE_PRIVATE) }
     private val journal by lazy { AtomicFile(File(appContext.filesDir, "pending-command.json")) }
 

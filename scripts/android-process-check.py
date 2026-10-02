@@ -90,6 +90,23 @@ def wait_text(tag, text, timeout=35):
 def screenshot(name):
     (OUT / f"{name}.png").write_bytes(adb("exec-out", "screencap", "-p"))
 
+def wait_saved(timeout=25):
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        tree = hierarchy()
+        fields = [item for item in tree.iter("node") if item.get("resource-id") == "save-state"]
+        if any(item.get("text") == "输入已保存" for item in fields):
+            return
+        if not fields:
+            rects = [list(map(int, re.findall(r"\d+", item.get("bounds", "")))) for item in tree.iter("node")]
+            width = max(rect[2] for rect in rects if len(rect) == 4)
+            height = max(rect[3] for rect in rects if len(rect) == 4)
+            # Reveal the scrolling save status using the gutter, away from the editor.
+            adb("shell", "input", "swipe", str(width - 5), str(height // 3),
+                str(width - 5), str(height * 3 // 4), "300")
+        time.sleep(0.3)
+    raise AssertionError("Latest input was not acknowledged as saved")
+
 
 def restart():
     old = adb("shell", "pidof", PACKAGE, check=False).decode().strip()
@@ -124,6 +141,7 @@ def main():
     tap("new-review")
     tap("fill-example")
     type_text("title", title)
+    wait_saved()
     draft_restart = restart()
     tap("new-review")
     assert title in node("title").get("text", ""), "Draft lost after process termination"
@@ -153,6 +171,7 @@ def main():
 
     answer = "Query payment status before retrying a confirmed failure."
     type_text("answer:q1", answer)
+    wait_saved()
     answer_restart = restart()
     tap("review:" + review_id, scroll=True)
     assert answer in node("answer:q1").get("text", ""), "Answer lost after process termination"
