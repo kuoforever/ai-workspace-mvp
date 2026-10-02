@@ -16,6 +16,17 @@ lipo -archs ios/build/Build/Products/Debug-iphonesimulator/AIWorkspace.app/AIWor
 ditto -c -k --sequesterRsrc --keepParent ios/build/Build/Products/Debug-iphonesimulator/AIWorkspace.app ios-evidence/AIWorkspace-simulator.app.zip
 xcrun simctl boot "$device_id" || true
 xcrun simctl bootstatus "$device_id" -b
+# Register both bundles before XCTest starts, including on newly created devices.
+# Boot completion alone does not guarantee FrontBoard knows the test runner.
+install_test_apps() {
+  local test_simulator_id="$1"
+  local test_products="ios/build/Build/Products/Debug-iphonesimulator"
+  xcrun simctl install "$test_simulator_id" "$test_products/AIWorkspace.app"
+  xcrun simctl install "$test_simulator_id" "$test_products/AIWorkspaceUITests-Runner.app"
+  xcrun simctl get_app_container "$test_simulator_id" io.github.kuoforever.aiworkspace.ios app >/dev/null
+  xcrun simctl get_app_container "$test_simulator_id" io.github.kuoforever.aiworkspace.ios.uitests.xctrunner app >/dev/null
+}
+install_test_apps "$device_id"
 xcrun simctl io "$device_id" recordVideo --codec=h264 ios-evidence/ci-demo.mp4 >ios-evidence/recording.log 2>&1 &
 recording_pid=$!
 finish_recording() {
@@ -52,6 +63,7 @@ for profile in compact tablet; do
   if [ "$profile" = compact ]; then layout_id="$compact_id"; else layout_id="$tablet_id"; fi
   xcrun simctl boot "$layout_id"
   xcrun simctl bootstatus "$layout_id" -b
+  install_test_apps "$layout_id"
   old_appearance=$(xcrun simctl ui "$layout_id" appearance | tr '[:upper:]' '[:lower:]')
   old_content_size=$(xcrun simctl ui "$layout_id" content_size)
   xcrun simctl ui "$layout_id" appearance dark
