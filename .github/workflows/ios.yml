@@ -2,6 +2,7 @@ name: iOS
 
 on:
   push:
+    branches: [main]
     paths: ["ios/**", "app/**", "knowledge/**", "fixtures/**", "scripts/ios*.sh", "scripts/mobile-performance*", ".github/workflows/ios.yml", "uv.lock"]
   pull_request:
     # Required PR checks must also be emitted for documentation-only changes.
@@ -16,12 +17,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: ios-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ios-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   native:
-    name: ${{ inputs.performance_only && 'iOS performance only' || 'iOS native checks' }}
+    name: ${{ inputs.performance_only && 'iOS performance only' || github.event_name == 'pull_request' && 'iOS native checks' || 'iOS branch checks' }}
     runs-on: macos-15
     timeout-minutes: 40
     env:

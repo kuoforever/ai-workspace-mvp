@@ -2,6 +2,7 @@ name: Android
 
 on:
   push:
+    branches: [main]
     paths: ["android/**", "app/**", "knowledge/**", "fixtures/**", "scripts/android-*.sh", "scripts/android-*.py", "scripts/mobile-performance*", ".github/workflows/android.yml", "uv.lock"]
   pull_request:
     # Required PR checks must also be emitted for documentation-only changes.
@@ -11,12 +12,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: android-${{ github.event_name }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
   native:
-    name: Android native checks
+    name: ${{ github.event_name == 'pull_request' && 'Android native checks' || 'Android branch checks' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
