@@ -4,7 +4,7 @@ on:
   push:
     paths: ["ios/**", "app/**", "knowledge/**", "fixtures/**", "scripts/ios*.sh", "scripts/mobile-performance*", ".github/workflows/ios.yml", "uv.lock"]
   pull_request:
-    paths: ["ios/**", "app/**", "knowledge/**", "fixtures/**", "scripts/ios*.sh", "scripts/mobile-performance*", ".github/workflows/ios.yml", "uv.lock"]
+    # Required PR checks must also be emitted for documentation-only changes.
   workflow_dispatch:
     inputs:
       performance_only:
@@ -21,6 +21,7 @@ concurrency:
 
 jobs:
   native:
+    name: ${{ inputs.performance_only && 'iOS performance only' || 'iOS native checks' }}
     runs-on: macos-15
     timeout-minutes: 40
     env:
