@@ -31,7 +31,9 @@ jobs:
           version: "0.12.5"
           enable-cache: true
       - run: uv sync --frozen
+      - run: npm ci --ignore-scripts --no-audit --no-fund
       - run: uv run --no-sync ruff check app tests scripts evals
       - run: node --check static/ai-review-ui.js
+      - run: npm test
       - run: uv run --no-sync python -m evals.benchmark freeze
       - run: uv run --no-sync pytest -q

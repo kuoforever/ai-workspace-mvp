@@ -212,6 +212,102 @@ class WorkspaceViewModelTest {
         assertFalse(vm.ui.copy(cached = true).shouldPoll)
     }
 
+    @Test fun waitingInputPollsAnotherDevicesCompletionAndKeepsLocalAnswers() {
+        val waiting = ReviewSnapshot("shared-review", 2, "waiting_input", ReviewInput(), emptyMap(),
+            questions = listOf(Question("q1", "How are timeouts handled?")))
+        val store = Store()
+        val api = object : WorkspaceApi {
+            override suspend fun request(path: String, body: String?, key: String?): String = when {
+                path == "/catalog" -> "{\"checks\":[]}"
+                body != null -> wireJson.encodeToString(waiting)
+                path == "/reviews/shared-review" -> wireJson.encodeToString(waiting.copy(
+                    revision = 3, status = "completed", answers = mapOf("q1" to "another device")))
+                else -> "[]"
+            }
+        }
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
+        vm.createPage(); vm.example(); vm.create()
+        vm.editAnswer("q1", "my unsent answer")
+        assertTrue(vm.ui.shouldPoll)
+        vm.poll()
+        assertEquals("completed", vm.ui.review?.status)
+        assertEquals(3, vm.ui.review?.revision)
+        assertEquals("my unsent answer", vm.ui.answers["q1"])
+        assertEquals("my unsent answer", store.savedAnswers[waiting.id]?.get("q1"))
+        assertFalse(vm.ui.shouldPoll)
+    }
+
+    @Test fun refreshRejectsAnotherReviewAndDoesNotRollBackANewerCache() {
+        val latest = ReviewSnapshot("selected", 3, "completed", ReviewInput(), emptyMap())
+        var returned = latest.copy(revision = 2, status = "waiting_input")
+        val store = Store().apply { reports[latest.id] = latest }
+        val api = object : WorkspaceApi {
+            override suspend fun request(path: String, body: String?, key: String?): String = when (path) {
+                "/catalog" -> "{\"checks\":[]}"
+                "/reviews/selected" -> wireJson.encodeToString(returned)
+                else -> "[]"
+            }
+        }
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
+        vm.open(latest.id)
+        assertEquals(3, vm.ui.review?.revision)
+        assertEquals("completed", store.reports[latest.id]?.status)
+        returned = latest.copy(id = "wrong-review", revision = 4)
+        vm.refresh()
+        assertEquals(latest.id, vm.ui.selectedId)
+        assertEquals(3, vm.ui.review?.revision)
+        assertNotNull(vm.ui.error)
+        assertFalse(store.reports.containsKey("wrong-review"))
+    }
+
+    @Test fun sourceAndExportCannotNavigateDuringAPoll() {
+        val gate = CompletableDeferred<String>()
+        val review = ReviewSnapshot("poll-navigation", 1, "waiting_model", ReviewInput(),
+            mapOf("input" to Source("Design", "payment status", "input.txt", "digest")))
+        val api = object : WorkspaceApi {
+            override suspend fun request(path: String, body: String?, key: String?): String = when {
+                path == "/catalog" -> "{\"checks\":[]}"
+                body != null -> wireJson.encodeToString(review)
+                path == "/reviews/poll-navigation" -> gate.await()
+                else -> "[]"
+            }
+        }
+        val vm = WorkspaceViewModel(api, Store(), DiskExecutor(dispatcher))
+        vm.createPage(); vm.example(); vm.create(); vm.poll()
+        assertTrue(vm.ui.busy)
+        vm.source(Citation("input", "payment status"))
+        assertEquals(Page.DETAIL, vm.ui.page)
+        vm.export()
+        assertEquals(Page.DETAIL, vm.ui.page)
+        gate.complete(wireJson.encodeToString(review.copy(revision = 2, status = "completed")))
+        assertEquals("completed", vm.ui.review?.status)
+    }
+
+    @Test fun typingDuringAWaitingInputPollKeepsTheNewestAnswer() {
+        val gate = CompletableDeferred<String>()
+        val review = ReviewSnapshot("typing", 2, "waiting_input", ReviewInput(), emptyMap(),
+            questions = listOf(Question("q1", "How are timeouts handled?")))
+        val store = Store()
+        val api = object : WorkspaceApi {
+            override suspend fun request(path: String, body: String?, key: String?): String = when {
+                path == "/catalog" -> "{\"checks\":[]}"
+                body != null -> wireJson.encodeToString(review)
+                path == "/reviews/typing" -> gate.await()
+                else -> "[]"
+            }
+        }
+        val vm = WorkspaceViewModel(api, store, DiskExecutor(dispatcher))
+        vm.createPage(); vm.example(); vm.create(); vm.editAnswer("q1", "first")
+        vm.poll()
+        assertTrue(vm.ui.canEditAnswers)
+        assertFalse(vm.ui.editable)
+        vm.editAnswer("q1", "newest while the poll is waiting")
+        gate.complete(wireJson.encodeToString(review))
+        assertEquals("newest while the poll is waiting", vm.ui.answers["q1"])
+        assertEquals(vm.ui.answers, store.savedAnswers[review.id])
+        assertFalse(vm.ui.refreshing)
+    }
+
     @Test fun backgroundingCancelsPollingWithoutPublishingALateResult() {
         val gate = CompletableDeferred<String>()
         val response = ReviewSnapshot("poll-review", 1, "waiting_model", ReviewInput(), emptyMap())

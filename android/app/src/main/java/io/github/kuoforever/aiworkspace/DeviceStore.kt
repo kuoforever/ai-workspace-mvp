@@ -87,8 +87,9 @@ class DeviceStore(context: Context) : WorkspaceStore {
 
     override fun saveReview(review: ReviewSnapshot) = local {
         val previous = cachedReviews()
+        val accepted = previous.firstOrNull { it.id == review.id && it.revision > review.revision } ?: review
         val ids = (listOf(review.id) + previous.map { it.id }.filter { it != review.id }).take(20)
-        val body = wireJson.encodeToString(review)
+        val body = wireJson.encodeToString(accepted)
         val editor = preferences.edit().putString("review", body).putString("review:" + review.id, body)
             .putString("saved-review-ids", wireJson.encodeToString(ids))
         previous.filter { it.id in ids && it.id != review.id }.forEach {

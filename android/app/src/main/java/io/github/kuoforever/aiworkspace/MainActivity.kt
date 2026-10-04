@@ -330,7 +330,7 @@ private fun Detail(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composab
                 Text(question.text, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(state.answers[question.id].orEmpty(), { vm.editAnswer(question.id, it) },
-                    label = { Text("你的回答") }, enabled = enabled,
+                    label = { Text("你的回答") }, enabled = state.canEditAnswers,
                     minLines = if (compactEditor) 2 else 3, maxLines = 8,
                     modifier = Modifier.fillMaxWidth().bringIntoViewRequester(requester)
                         .onFocusChanged { focused = it.isFocused }.testTag("answer:${question.id}"))
