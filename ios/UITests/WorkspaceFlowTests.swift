@@ -19,11 +19,13 @@ final class WorkspaceFlowTests: XCTestCase {
     override func tearDownWithError() throws {
         XCUIDevice.shared.orientation = .portrait
     }
-    private func waitStatus(_ value: String) {
-        let field = app.staticTexts["review-status"]
+    private func waitLabel(_ field: XCUIElement, _ value: String) {
         let predicate = NSPredicate(format: "exists == true AND label == %@", value)
         expectation(for: predicate, evaluatedWith: field)
         waitForExpectations(timeout: 30)
+    }
+    private func waitStatus(_ value: String) {
+        waitLabel(app.staticTexts["review-status"], value)
     }
     private func scrollPage(up: Bool) {
         // Drag the page gutter so a multiline editor cannot consume a gesture
@@ -233,6 +235,8 @@ final class WorkspaceFlowTests: XCTestCase {
     }
     func testRecordedModelReviewContinuesOnPhone() throws {
         tap(app.buttons["check-connection"])
+        // XCTest idling does not wait for the asynchronous configuration request.
+        waitLabel(app.staticTexts["connection-status"], "工作台已连接")
         XCTAssertEqual(app.staticTexts["connection-status"].label, "工作台已连接")
         let file = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "mobile-review", withExtension: "json"))
         let fixture = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])

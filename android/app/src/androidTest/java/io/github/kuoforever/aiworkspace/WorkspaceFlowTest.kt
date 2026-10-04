@@ -70,6 +70,7 @@ class WorkspaceFlowTest {
         ready("answer:q1")
         shot("01-clarification")
         compose.onNodeWithTag("answer:q1").performTextInput("先查询支付状态，再对明确失败执行有限重试。")
+        compose.onNodeWithTag("answer:q1").assertTextContains("先查询支付状态", substring = true)
         compose.activityRule.scenario.recreate()
         ready("answer:q1")
         compose.onNodeWithTag("answer:q1").assertTextContains("先查询支付状态", substring = true)
@@ -120,7 +121,11 @@ class WorkspaceFlowTest {
         waitText(title)
         compose.waitForEnabled(hasText(title))
         compose.onNodeWithText(title).performClick()
-        waitText("等待补充")
+        // The history row already says "等待补充" while open() is still reading
+        // disk. Wait for the detail operation, then assert this review's state.
+        ready("detail-list")
+        compose.onNodeWithText(title).assertIsDisplayed()
+        compose.onNodeWithTag("status").assertTextEquals("等待补充")
         val answers = fixture.getValue("answers").jsonObject
         for ((id, answer) in answers) {
             compose.onNodeWithTag("detail-list").performScrollToNode(hasTestTag("answer:$id"))
