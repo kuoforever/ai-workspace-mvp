@@ -14,6 +14,7 @@ enum Page: Equatable { case home, create, detail, source, export }
     @Published private(set) var answers: [String: String] = [:]
     @Published private(set) var pending: PendingCommand?
     @Published private(set) var busy = false
+    @Published private(set) var refreshing = false
     @Published private(set) var loadingLocal = true
     @Published private(set) var saveState: SaveState = .saved
     @Published private(set) var cached = true
@@ -52,20 +53,27 @@ enum Page: Equatable { case home, create, detail, source, export }
                  try device.cachedReview(), try device.savedReviews().map(\.summary))
             }
             draft = local.0; rows = local.1; review = local.2; savedRows = local.3
+            startupError = nil
         } catch {
             startupError = "本机记录无法读取，写入已暂停。请保留应用数据后排查，避免重复提交。"
         }
     }
+    func reloadLocalData() async {
+        guard !busy, !loadingLocal, startupError != nil else { return }
+        loadingLocal = true
+        await loadLocal(store)
+    }
     var editable: Bool { !busy && !loadingLocal && pending == nil && startupError == nil }
+    var canEditAnswers: Bool { (!busy || refreshing) && !loadingLocal && pending == nil && startupError == nil }
     var shouldPoll: Bool {
         !cached && page == .detail && !busy && error == nil &&
-            ["waiting_model", "running"].contains(review?.status ?? "")
+            ["waiting_model", "waiting_input", "running"].contains(review?.status ?? "")
     }
-    private func operation(_ work: () async throws -> Void) async {
+    private func operation(autoRefresh: Bool = false, _ work: () async throws -> Void) async {
         await waitUntilLoaded()
         guard !busy, startupError == nil else { return }
-        busy = true; error = nil
-        defer { busy = false; pending = journal?.pending }
+        busy = true; refreshing = autoRefresh; error = nil
+        defer { busy = false; refreshing = false; pending = journal?.pending }
         do { try await work() }
         catch is CancellationError { }
         catch let failure as APIError {
@@ -77,8 +85,8 @@ enum Page: Equatable { case home, create, detail, source, export }
             }
         } catch { self.error = "操作未完成，输入与原提交已保留：\(error.localizedDescription)" }
     }
-    func refresh() async {
-        await operation {
+    func refresh(autoRefresh: Bool = false) async {
+        await operation(autoRefresh: autoRefresh) {
             guard let store = self.store else { return }
             if self.page == .detail { try await self.edits.flush() }
             if self.page == .home && self.savedOnly {
@@ -90,10 +98,11 @@ enum Page: Equatable { case home, create, detail, source, export }
                 self.checks = try Wire.decode(Catalog.self, await self.observedAPI.get("/catalog")).checks
             }
             if self.page == .detail, let id = self.selectedID {
-                try await self.show(Wire.decode(ReviewSnapshot.self, await self.observedAPI.get("/reviews/\(id)")))
+                try await self.show(Wire.decode(ReviewSnapshot.self, await self.observedAPI.get("/reviews/\(id)")), expectedID: id)
             } else {
                 let rows = try Wire.decode([ReviewSummary].self, await self.observedAPI.get("/reviews"))
                 try await self.disk.run { try store.save("list.json", value: rows) }
+                try Task.checkCancellation()
                 self.rows = rows; self.cached = false
             }
         }
@@ -124,17 +133,24 @@ enum Page: Equatable { case home, create, detail, source, export }
             self.selectedID = id; self.review = local.0; self.answers = local.1
             self.page = .detail; self.cached = true
             if !self.savedOnly || self.review == nil {
-                try await self.show(Wire.decode(ReviewSnapshot.self, await self.observedAPI.get("/reviews/\(id)")))
+                try await self.show(Wire.decode(ReviewSnapshot.self, await self.observedAPI.get("/reviews/\(id)")), expectedID: id)
             }
         }
     }
-    private func show(_ value: ReviewSnapshot) async throws {
+    private func show(_ value: ReviewSnapshot, expectedID: String? = nil) async throws {
+        guard expectedID == nil || value.id == expectedID else {
+            throw APIError(status: 0, message: "响应中的评审与所选记录不一致，请刷新核对。")
+        }
         guard let store else { return }
         let local = try await disk.run {
-            try store.saveReview(value)
-            return (try store.answers(value.id), try store.savedReviews().map(\.summary))
+            let previous = try store.cachedReview(value.id)
+            let accepted = previous.map { $0.revision > value.revision ? $0 : value } ?? value
+            try store.saveReview(accepted)
+            return (accepted, try store.answers(accepted.id), try store.savedReviews().map(\.summary))
         }
-        answers = local.0; savedRows = local.1; review = value; selectedID = value.id
+        try Task.checkCancellation()
+        if selectedID != local.0.id { answers = local.1 }
+        savedRows = local.2; review = local.0; selectedID = local.0.id
         cached = false; page = .detail
     }
     func createPage() { guard editable else { return }; error = nil; page = .create }
@@ -194,7 +210,7 @@ enum Page: Equatable { case home, create, detail, source, export }
         }
     }
     func editAnswer(_ id: String, _ value: String) {
-        guard editable, let reviewID = review?.id, let store else { return }
+        guard canEditAnswers, let reviewID = review?.id, let store else { return }
         var next = answers; next[id] = value
         answers = next
         let snapshot = next, disk = self.disk
@@ -222,6 +238,7 @@ enum Page: Equatable { case home, create, detail, source, export }
                 else if let id = action.reviewID { try store.saveAnswers(id, [:]) }
             }
             if action.kind == "create" { self.draft = ReviewInput() }
+            else if action.reviewID == self.selectedID { self.answers = [:] }
             try await self.show(result)
         }
     }
@@ -233,6 +250,7 @@ enum Page: Equatable { case home, create, detail, source, export }
         guard let review else { return }
         await operation {
             self.exported = try await self.disk.run { review.markdown }
+            try Task.checkCancellation()
             self.page = .export
         }
     }

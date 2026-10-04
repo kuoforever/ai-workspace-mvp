@@ -31,6 +31,7 @@ data class WorkspaceUi(
     val quote: String = "",
     val exported: String = "",
     val busy: Boolean = false,
+    val refreshing: Boolean = false,
     val loadingLocal: Boolean = true,
     val saveState: SaveState = SaveState.SAVED,
     val cached: Boolean = true,
@@ -40,8 +41,9 @@ data class WorkspaceUi(
     val connection: Connection = Connection.UNKNOWN,
 ) {
     val editable: Boolean get() = !busy && !loadingLocal && pending == null && startupError == null
+    val canEditAnswers: Boolean get() = (!busy || refreshing) && !loadingLocal && pending == null && startupError == null
     val shouldPoll: Boolean get() = page == Page.DETAIL && !cached && !busy && error == null &&
-        review?.status in listOf("waiting_model", "running")
+        review?.status in listOf("waiting_model", "waiting_input", "running")
 }
 
 class WorkspaceViewModel(
@@ -99,7 +101,7 @@ class WorkspaceViewModel(
 
     private fun operation(autoRefresh: Boolean = false, block: suspend () -> Unit) {
         if (ui.busy || ui.loadingLocal || ui.startupError != null) return
-        ui = ui.copy(busy = true, error = null)
+        ui = ui.copy(busy = true, refreshing = autoRefresh, error = null)
         val job = viewModelScope.launch {
             try { block() }
             catch (cancelled: CancellationException) { throw cancelled }
@@ -112,7 +114,7 @@ class WorkspaceViewModel(
                 ui = ui.copy(cached = true, error = "未能连接工作台。请确认电脑服务与设备转发已启动；草稿仍保留在设备。")
             } catch (failure: Exception) {
                 ui = ui.copy(error = failure.message ?: "暂时无法完成，请稍后重试。")
-            } finally { ui = ui.copy(busy = false, pending = journal?.pending) }
+            } finally { ui = ui.copy(busy = false, refreshing = false, pending = journal?.pending) }
         }
         if (autoRefresh) polling = job
     }
@@ -136,7 +138,8 @@ class WorkspaceViewModel(
             ui = ui.copy(checks = wireJson.decodeFromString<Catalog>(observedApi.request("/catalog")).checks)
         }
         if (ui.page == Page.DETAIL && ui.selectedId != null) {
-            show(wireJson.decodeFromString(observedApi.request("/reviews/" + segment(ui.selectedId!!))))
+            val id = ui.selectedId!!
+            show(wireJson.decodeFromString(observedApi.request("/reviews/" + segment(id))), id)
         } else {
             val rows = wireJson.decodeFromString<List<ReviewSummary>>(observedApi.request("/reviews"))
             disk.run { store.saveList(rows) }
@@ -210,7 +213,7 @@ class WorkspaceViewModel(
     }
 
     fun editAnswer(id: String, text: String) {
-        if (!ui.editable || text.codePointCount(0, text.length) > 2000) return
+        if (!ui.canEditAnswers || text.codePointCount(0, text.length) > 2000) return
         val reviewId = ui.selectedId ?: return
         val answers = ui.answers + (id to text)
         ui = ui.copy(answers = answers)
@@ -242,6 +245,7 @@ class WorkspaceViewModel(
                 else if (action.reviewId != null) store.saveAnswers(action.reviewId, emptyMap())
             }
             if (action.kind == "create") ui = ui.copy(draft = ReviewInput())
+            else if (action.reviewId == ui.selectedId) ui = ui.copy(answers = emptyMap())
             show(review)
         }
     }
@@ -252,25 +256,31 @@ class WorkspaceViewModel(
         val answers = disk.run { store.answers(id) }
         ui = ui.copy(page = Page.DETAIL, selectedId = id, review = cached, answers = answers, cached = true)
         if (!ui.savedOnly || cached == null) {
-            show(wireJson.decodeFromString(observedApi.request("/reviews/" + segment(id))))
+            show(wireJson.decodeFromString(observedApi.request("/reviews/" + segment(id))), id)
         }
     }
 
-    private suspend fun show(review: ReviewSnapshot) {
+    private suspend fun show(review: ReviewSnapshot, expectedId: String? = null) {
+        require(expectedId == null || review.id == expectedId) { "响应中的评审与所选记录不一致，请刷新核对。" }
         val local = disk.run {
-            store.saveReview(review)
-            store.answers(review.id) to store.cachedReviews().map { it.summary() }
+            val previous = store.cachedReview(review.id)
+            val accepted = previous?.takeIf { it.revision > review.revision } ?: review
+            store.saveReview(accepted)
+            Triple(accepted, store.answers(accepted.id), store.cachedReviews().map { it.summary() })
         }
-        ui = ui.copy(page = Page.DETAIL, selectedId = review.id, review = review,
-            answers = local.first, savedRows = local.second, cached = false)
+        ui = ui.copy(page = Page.DETAIL, selectedId = local.first.id, review = local.first,
+            answers = if (ui.selectedId == local.first.id) ui.answers else local.second,
+            savedRows = local.third, cached = false)
     }
 
     fun source(citation: Citation) {
+        if (ui.busy) return
         val source = ui.review?.sources?.get(citation.sourceId) ?: return
         ui = ui.copy(page = Page.SOURCE, source = source, quote = citation.quote)
     }
 
     fun export() {
+        if (ui.busy) return
         val review = ui.review ?: return
         ui = ui.copy(page = Page.EXPORT, exported = review.markdown())
     }

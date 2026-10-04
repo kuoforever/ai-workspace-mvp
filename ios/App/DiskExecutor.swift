@@ -4,11 +4,14 @@ import Foundation
 final class DiskExecutor: @unchecked Sendable {
     private let queue = DispatchQueue(label: "io.github.kuoforever.aiworkspace.storage", qos: .userInitiated)
     func run<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
-        try await withCheckedThrowingContinuation { continuation in
+        try Task.checkCancellation()
+        let result: T = try await withCheckedThrowingContinuation { continuation in
             queue.async {
                 do { continuation.resume(returning: try work()) }
                 catch { continuation.resume(throwing: error) }
             }
         }
+        try Task.checkCancellation()
+        return result
     }
 }

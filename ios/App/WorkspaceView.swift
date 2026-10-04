@@ -45,7 +45,7 @@ import UniformTypeIdentifiers
                 guard scenePhase == .active else { return }
                 while !Task.isCancelled {
                     do { try await Task.sleep(for: .seconds(3)) } catch { return }
-                    if model.shouldPoll { await model.refresh() }
+                    if model.shouldPoll { await model.refresh(autoRefresh: true) }
                 }
             }
         }
@@ -101,6 +101,10 @@ import UniformTypeIdentifiers
                 }
             }
             if let message = model.startupError ?? model.error { notice(message, color: .red) }
+            if model.startupError != nil {
+                Button("重新读取本机记录") { Task { await model.reloadLocalData() } }
+                    .disabled(model.busy || model.loadingLocal).accessibilityIdentifier("reload-local")
+            }
             Text(model.saveState.rawValue).font(.footnote).foregroundStyle(.secondary).accessibilityIdentifier("save-state")
             if model.saveState == .failed {
                 Button("重试保存") { Task { await model.retrySave() } }
@@ -300,7 +304,7 @@ import UniformTypeIdentifiers
                                 TextEditor(text: Binding(get: { model.answers[question.id] ?? "" },
                                     set: { model.editAnswer(question.id, $0) }))
                                     .frame(minHeight: 110).padding(8).background(.background, in: RoundedRectangle(cornerRadius: 12))
-                                    .disabled(!model.editable).accessibilityIdentifier("answer:\(question.id)")
+                                    .disabled(!model.canEditAnswers).accessibilityIdentifier("answer:\(question.id)")
                             }
                         }
                         Button("保存回答并继续") { Task { await model.answer() } }

@@ -55,12 +55,13 @@ final class DeviceStore: CommandStore, @unchecked Sendable {
     }
     func saveReview(_ review: ReviewSnapshot) throws {
         let previous = try savedReviews()
-        let kept = Array(([review] + previous.filter { $0.id != review.id }).prefix(20))
+        let accepted = previous.first { $0.id == review.id && $0.revision > review.revision } ?? review
+        let kept = Array(([accepted] + previous.filter { $0.id != review.id }).prefix(20))
         // Write bodies before publishing the index. A partial write can be retried safely.
         for value in kept where value.id == review.id || !FileManager.default.fileExists(atPath: root.appendingPathComponent(reviewFile(value.id)).path) {
             try save(reviewFile(value.id), value: value)
         }
-        try save("review.json", value: review)
+        try save("review.json", value: accepted)
         try save("saved-review-ids.json", value: kept.map(\.id))
         for value in previous where !kept.contains(where: { $0.id == value.id }) {
             try? FileManager.default.removeItem(at: root.appendingPathComponent(reviewFile(value.id)))

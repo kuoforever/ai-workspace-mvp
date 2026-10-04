@@ -79,6 +79,10 @@ class MobileDocumentsTest {
         val disk = DiskExecutor()
         disk.run { store.saveReview(snapshot("second")) }
         assertEquals(setOf("legacy", "second"), disk.run { DeviceStore(context).cachedReviews().map { it.id }.toSet() })
+        val latest = snapshot("second").copy(revision = 3)
+        disk.run { store.saveReview(latest); store.saveReview(latest.copy(revision = 2, status = "waiting_input")) }
+        assertEquals(3, disk.run { DeviceStore(context).cachedReview("second")?.revision })
+        assertEquals("completed", disk.run { DeviceStore(context).cachedReview()?.status })
         repeat(23) { index -> disk.run { store.saveReview(snapshot(index.toString())) } }
         val cached = disk.run { DeviceStore(context).cachedReviews() }
         assertEquals(20, cached.size)
