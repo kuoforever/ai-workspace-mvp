@@ -2,7 +2,7 @@
   "name": "ai-workspace-web-checks",
   "private": true,
   "scripts": {
-    "test": "node --test tests/web_review.test.cjs"
+    "test": "node --test tests/web_review.test.cjs tests/workspace.test.cjs"
   },
   "devDependencies": {
     "jsdom": "26.1.0"

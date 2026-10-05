@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light"><title>AI Workspace · 通用工作台</title>
+  <link rel="stylesheet" href="/assets/workspace.css"><script defer src="/assets/workspace.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到工作区</a>
+  <aside class="sidebar">
+    <a class="brand" href="/workspace"><span class="mark">✳</span><span>AI Workspace<small>把已有工作继续做下去</small></span></a>
+    <button id="new-task" class="primary">＋ 新建任务</button>
+    <div class="side-heading"><span>任务记录</span><button id="refresh" class="quiet">刷新</button></div>
+    <nav id="history" aria-label="任务记录"><p class="muted">正在读取…</p></nav>
+    <div class="sidebar-footer"><a href="/engineering?ai">工程评审模板 ↗</a><p>工作台内容、要求与结果<br>保存在本机，可继续处理。</p></div>
+  </aside>
+  <main id="main" tabindex="-1">
+    <header class="page-header"><div><p class="eyebrow">YOUR WORK, IN CONTEXT</p><h1>从工作台开始</h1><p class="muted">带入资料与进度，说明目标，让每项要求都有回应。</p></div><span id="connection" role="status">正在连接</span></header>
+    <div id="error" class="notice error" role="alert" hidden></div>
+    <div id="pending" class="notice" hidden><p>上次提交尚未确认，输入与原请求已保留。</p><button id="retry">重试原提交</button></div>
+    <p id="save-state" class="save-state" role="status"></p>
+    <div id="composer">
+      <form id="task-form">
+        <section class="card" id="workbench-section">
+          <div class="section-title"><div><span class="step">01</span><h2>带入你的工作台</h2></div><div class="actions"><button type="button" id="example" class="quiet">载入示例</button><button type="button" id="engineering" class="quiet">载入工程模板</button><button type="button" id="import">导入工作台</button></div></div>
+          <input type="file" id="file" accept=".json,.html,.htm,application/json,text/html" hidden>
+          <div id="empty-workbench" class="empty"><span class="empty-mark">▦</span><h3>把内容、要求和当前进度一起带进来</h3><p>支持工作台 JSON，以及本项目导出的完整 HTML。<br>也可以先载入活动筹备示例，体验一次完整流程。</p><button type="button" id="create-workbench">新建空白工作台</button></div>
+          <div id="workbench" hidden>
+            <div class="workbench-heading"><label>工作台名称<input id="workbench-title" required maxlength="120"></label><div class="snapshot-label">当前快照<span id="workbench-version"></span></div></div>
+            <div id="import-warnings" class="notice" hidden></div>
+            <div class="counts" id="counts"></div>
+            <details class="editor-section" open><summary>内容与处理范围 <span class="muted">选中本次需要处理的条目</span></summary><div class="actions small-actions"><button type="button" id="select-all">选择全部</button><button type="button" id="select-records">选择工作记录</button><button type="button" id="add-object">＋ 新增条目</button></div><div id="objects"></div></details>
+            <details class="editor-section" open><summary>工作台要求 <span class="muted">目标、约束与验收方式</span></summary><div id="requirements"></div><button type="button" id="add-requirement">＋ 添加要求</button></details>
+            <details class="editor-section"><summary>结构与来源</summary><p class="muted">字段含义、对象关系和来源会随快照一起保存。修改结构后会重新校验引用与规则。</p><label>完整工作台数据<textarea id="package-json" rows="12" spellcheck="false"></textarea></label><div class="actions"><button type="button" id="apply-json">更新工作台数据</button><button type="button" id="download-workbench">下载工作台 JSON</button></div></details>
+          </div>
+        </section>
+        <section class="card">
+          <div class="section-title"><div><span class="step">02</span><h2>说明这次要完成什么</h2></div></div>
+          <div class="form-row"><label>任务名称<input id="task-title" required maxlength="120" placeholder="例如：核对筹备计划的执行条件"></label><label>任务类型<select id="task-type"><option value="review">评审</option><option value="summarize">总结</option><option value="compare">对比</option><option value="organize">整理</option><option value="draft">补写</option><option value="plan">计划</option></select></label></div>
+          <label>你的目标<textarea id="goal" required minlength="4" maxlength="4000" rows="3" placeholder="说明你希望如何处理这些资料。"></textarea></label>
+          <label>交付要求<textarea id="deliverable" required minlength="4" maxlength="2000" rows="2" placeholder="例如：列出阻塞项、对应依据和建议下一步。"></textarea></label>
+          <details class="editor-section"><summary>本次补充要求</summary><label>每行一条<textarea id="task-requirements" rows="3" placeholder="例如：建议按紧急程度排序。"></textarea></label><p class="muted">这些要求与工作台要求一起检查，原要求会保留。</p></details>
+          <div class="submit-row"><label>处理方式<select id="mode"><option value="mcp">由连接的 AI 助手处理</option><option value="scripted">离线演示</option></select></label><button id="submit" type="submit" class="primary">提交任务 →</button></div>
+          <p id="mode-note" class="muted">提交后，请连接工作台的桌面助手接手。信息不足时可补充回答。</p>
+        </section>
+      </form>
+    </div>
+    <section id="task-detail" hidden aria-live="polite"></section>
+    <footer>完整输入会保存为快照。结果保留要求、引用和版本，方便核对与继续处理。</footer>
+  </main>
+</body>
+</html>

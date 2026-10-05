@@ -1,7 +1,7 @@
 [project]
 name = "ai-workspace-mvp"
-version = "0.1.0"
-description = "A local SWE design review workspace with durable, cited reports"
+version = "0.2.0"
+description = "A local AI task workspace with versioned workbench inputs, requirements and cited outputs"
 requires-python = ">=3.11,<3.14"
 dependencies = [
   "fastapi>=0.115,<1",

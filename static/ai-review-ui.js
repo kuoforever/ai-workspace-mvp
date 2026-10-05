@@ -9,6 +9,13 @@
   let pendingCommand = null, startupError = null, savedDraft = null;
   let draftRecordId = window.Handbook.getRecord().id, answerDrafts = Object.create(null);
   const snapshots = new Map();
+  const workbenchLaunch = $('workbench-launch');
+  if (workbenchLaunch) workbenchLaunch.onclick = () => {
+    try {
+      sessionStorage.setItem('ai-workbench-transfer', JSON.stringify(window.Handbook.getSnapshot()));
+      location.assign('/workspace');
+    } catch { workbenchLaunch.textContent = '请先导出工作台 JSON 再导入'; }
+  };
   const modal = document.createElement('dialog');
   modal.id = 'ai-review-dialog'; modal.dataset.aiAddon = ''; modal.setAttribute('aria-labelledby', 'ai-title');
   modal.innerHTML = `

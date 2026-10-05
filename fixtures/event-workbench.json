@@ -1,0 +1,26 @@
+{
+  "format": "ai-workbench",
+  "schema_version": 1,
+  "id": "event-demo",
+  "title": "社区分享会筹备",
+  "revision": 1,
+  "structure": [
+    {"kind": "task", "label": "筹备任务", "fields": {"owner": "负责人", "due": "截止日期", "deliverable": "交付物"}, "states": ["待开始", "进行中", "已完成"]},
+    {"kind": "budget", "label": "预算决策", "fields": {"limit": "预算上限", "planned": "计划支出"}, "states": []},
+    {"kind": "note", "label": "会议记录", "fields": {}, "states": []}
+  ],
+  "objects": [
+    {"id": "venue", "kind": "task", "title": "确认场地", "content": "候选场地已联系，等待报价。", "fields": {"owner": "林", "due": "2026-10-12", "deliverable": ""}, "state": "进行中", "source": "筹备记录/场地"},
+    {"id": "speakers", "kind": "task", "title": "确认分享嘉宾", "content": "两位嘉宾口头同意，尚未收到最终议程。", "fields": {"owner": "", "due": "2026-10-14", "deliverable": ""}, "state": "已完成", "source": "筹备记录/嘉宾", "links": ["meeting"]},
+    {"id": "budget", "kind": "budget", "title": "活动预算", "content": "会议记录与筹备方案给出的预算上限不一致。计划支出为 18,000 元。", "fields": {"limit": 20000, "planned": 18000}, "source": "预算表"},
+    {"id": "meeting", "kind": "note", "title": "筹备会议纪要", "content": "运营提出预算上限为 15,000 元；筹备方案使用 20,000 元。预算口径待确认。嘉宾议程未收齐，负责人待分配。", "source": "会议纪要/第一次筹备会"}
+  ],
+  "requirements": [
+    {"id": "owners", "text": "每个筹备任务都要有负责人和截止日期。", "object_ids": ["venue", "speakers"], "source": "活动执行规范", "acceptance": "所有任务的 owner 与 due 字段均有记录。", "rule": {"kind": "required_fields", "fields": ["owner", "due"]}},
+    {"id": "completed", "text": "标记已完成的任务必须附上交付物。", "object_ids": ["venue", "speakers"], "source": "活动执行规范", "acceptance": "已完成任务的 deliverable 字段有可核对的交付物。", "rule": {"kind": "state_requires", "state": "已完成", "fields": ["deliverable"]}},
+    {"id": "budget-plan", "text": "筹备方案要求预算上限为 20,000 元。", "object_ids": ["budget"], "source": "筹备方案", "acceptance": "预算 limit 字段等于 20,000。", "rule": {"kind": "field_equals", "field": "limit", "expected": 20000}},
+    {"id": "budget-meeting", "text": "会议要求预算上限为 15,000 元。", "object_ids": ["budget"], "source": "第一次筹备会议", "acceptance": "预算 limit 字段等于 15,000。", "rule": {"kind": "field_equals", "field": "limit", "expected": 15000}},
+    {"id": "blockers", "text": "所有阻塞项都要说明原因和下一步。", "source": "活动执行规范", "acceptance": "资料中提及的每个阻塞项都能定位原因及下一步行动。"}
+  ],
+  "provenance": {"purpose": "合成示例，仅用于体验通用工作台流程"}
+}

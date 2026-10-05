@@ -63,6 +63,7 @@ def main():
             [uv, "sync", "--frozen", "--python", "3.12"],
             [uv, "run", "--no-sync", "ruff", "check", "app", "tests", "scripts", "evals"],
             [node, "--check", "static/ai-review-ui.js"],
+            [node, "--check", "static/workspace.js"],
             [uv, "run", "--no-sync", "python", "-m", "evals.benchmark", "freeze"],
             [uv, "run", "--no-sync", "pytest", "-q"],
         ]

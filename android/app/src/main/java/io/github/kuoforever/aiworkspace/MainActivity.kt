@@ -5,6 +5,8 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Bundle
+import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.text.buildAnnotatedString
@@ -178,8 +180,17 @@ private fun Notice(text: String, error: Boolean = false) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Home(state: WorkspaceUi, vm: WorkspaceViewModel, header: @Composable () -> Unit) {
+    val context = LocalContext.current
     LazyColumn(Modifier.fillMaxSize().testTag("home-list"), contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { header() }
+        item {
+            OutlinedButton(onClick = {
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("http://127.0.0.1:8765/workspace"))) }
+                    .onFailure { Toast.makeText(context, "浏览器暂不可用，请在电脑打开通用工作台。", Toast.LENGTH_LONG).show() }
+            }, enabled = !state.busy, modifier = Modifier.fillMaxWidth().testTag("general-workbench")) {
+                Text("通用工作台 · 在浏览器中打开")
+            }
+        }
         item {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(!state.savedOnly, { vm.showSaved(false) }, enabled = !state.busy, label = { Text("全部评审") })
