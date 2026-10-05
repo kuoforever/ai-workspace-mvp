@@ -89,6 +89,20 @@ def test_general_tasks_preserve_all_requirements_and_conflicts(client, kind):
     )
 
 
+@pytest.mark.parametrize("mode", ["mcp", "scripted"])
+def test_maximum_goal_remains_complete_as_a_delivery_requirement(client, mode):
+    goal = '目标包含完整要求与"原文"。\n' * 240
+    goal = (goal + "继续核对。" * 800)[:4000]
+    task = create(client, mode=mode, goal=goal, deliverable="完整交付。" * 400)
+    assert task["input"]["goal"] == goal
+    assert task["requirements"]["task:delivery"]["text"] == goal
+    assert goal in task["sources"]["requirement:task:delivery"]["text"]
+    if mode == "mcp":
+        assert submit(client, task).json()["status"] == "completed"
+    else:
+        assert task["status"] == "completed"
+
+
 def test_json_and_html_import_share_the_same_contract(client):
     content = json.dumps(package(), ensure_ascii=False)
     raw_json = client.post(

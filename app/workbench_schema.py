@@ -59,7 +59,7 @@ class RequirementRule(WorkbenchModel):
 
 class Requirement(WorkbenchModel):
     id: Identifier
-    text: str = Field(min_length=4, max_length=2000)
+    text: str = Field(min_length=4, max_length=4000)
     object_ids: list[Identifier] = Field(default_factory=list, max_length=200)
     priority: Literal["must", "should"] = "must"
     source: str = Field(min_length=1, max_length=300)
