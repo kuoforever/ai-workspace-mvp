@@ -38,6 +38,12 @@
     if (!s) return '<p class="notice">来源快照暂时缺失，请刷新后核对。</p>';
     return `<details class="citation"><summary>${esc(s.title)} · 查看依据</summary><blockquote>${esc(citation.quote)}</blockquote><p class="source-path">${esc(s.path)}</p><details><summary>本次原文快照</summary><pre>${esc(s.text)}</pre><p class="source-path">SHA-256 ${esc(s.sha256)}</p></details></details>`;
   }
+  function changeLabel(change, task) {
+    if (change.target === 'content') return '内容';
+    if (change.target === 'state') return '状态';
+    const object = task.input.workbench.objects.find(o => o.id === change.object_id);
+    return task.input.workbench.structure.find(s => s.kind === object?.kind)?.fields?.[change.field] || change.field || '字段';
+  }
   function validatePackage(value) {
     if (!value || value.format !== 'ai-workbench' || value.schema_version !== 1 || typeof value.id !== 'string' ||
         typeof value.title !== 'string' || !Number.isInteger(value.revision) || value.revision < 0 ||
@@ -132,7 +138,7 @@
     if (task.result) {
       html += `<p>${esc(task.result.summary)}</p>${task.result.artifacts.map(a => `<article class="artifact"><h3>${esc(a.title)}</h3><pre>${esc(a.content)}</pre>${a.citations.map(c => sourceCard(c,task)).join('')}</article>`).join('')}<h3>每项要求的回应</h3>`;
       html += task.result.requirement_results.map(r => `<article class="result-item"><div class="row"><h3>${esc(task.requirements[r.requirement_id]?.text || r.requirement_id)}</h3><span class="badge ${esc(r.verdict)}">${esc(verdicts[r.verdict])}</span></div><p>${esc(r.explanation)}</p>${r.recommendation?`<p class="muted">下一步：${esc(r.recommendation)}</p>`:''}${r.citations.map(c=>sourceCard(c,task)).join('')}</article>`).join('');
-      if (task.result.changes.length) html += `<h3 style="margin-top:24px">选择要应用的修改</h3><p class="muted">选中的修改会生成工作台的新版本，原始快照可继续核对。</p>${task.result.changes.map(c=>`<article class="change"><label><input type="checkbox" data-change="${esc(c.id)}">${esc(task.input.workbench.objects.find(o=>o.id===c.object_id)?.title || c.object_id)} · ${esc(c.field || c.target)}</label><pre>${esc(typeof c.value==='string'?c.value:JSON.stringify(c.value))}</pre><p class="muted">${esc(c.reason)}</p>${c.citations.map(v=>sourceCard(v,task)).join('')}</article>`).join('')}${task.applied_workbench?'<p class="notice success">已生成新工作台版本，可下载或继续处理。</p>':'<button type="button" id="apply-changes">应用选中修改，生成新版本</button>'}`;
+      if (task.result.changes.length) html += `<h3 style="margin-top:24px">选择要应用的修改</h3><p class="muted">选中的修改会生成工作台的新版本，原始快照可继续核对。</p>${task.result.changes.map(c=>`<article class="change"><label><input type="checkbox" data-change="${esc(c.id)}">${esc(task.input.workbench.objects.find(o=>o.id===c.object_id)?.title || c.object_id)} · ${esc(changeLabel(c,task))}</label><pre>${esc(typeof c.value==='string'?c.value:JSON.stringify(c.value))}</pre><p class="muted">${esc(c.reason)}</p>${c.citations.map(v=>sourceCard(v,task)).join('')}</article>`).join('')}${task.applied_workbench?'<p class="notice success">已生成新工作台版本，可下载或继续处理。</p>':'<button type="button" id="apply-changes">应用选中修改，生成新版本</button>'}`;
     } else html += `<details class="editor-section" open><summary>已登记的要求与字段检查</summary>${Object.entries(task.requirements).map(([id,r])=>`<article class="result-item"><div class="row"><h3>${esc(r.text)}</h3><span class="badge ${esc(task.checks[id].verdict)}">${esc(verdicts[task.checks[id].verdict])}</span></div><p class="muted">验收：${esc(r.acceptance)}<br>来源：${esc(r.source)}</p></article>`).join('')}</details>`;
     html += `<div class="exports"><button type="button" data-export="markdown">导出报告</button><button type="button" data-export="json">导出完整记录</button><button type="button" data-export="workbench">下载工作台</button><button type="button" id="continue-task">在此工作台上继续</button></div><details class="editor-section"><summary>输入版本与完整快照</summary><p class="source-path">工作台 ${esc(task.input.workbench.id)} · 版本 ${task.input.workbench.revision}<br>任务版本 ${task.revision}<br>输入 SHA-256 ${esc(task.input_sha256)}</p><pre class="source-path">${esc(JSON.stringify(task.input.workbench, null, 2))}</pre></details></div>`;
     $('task-detail').innerHTML = html; controls();

@@ -124,7 +124,9 @@ test('offline reload keeps the last report and citation snapshots readable',asyn
 test('selected changes create a new snapshot without changing the original task input',async t=>{
   const r=snapshot('A',input(),3,'completed');r.result.changes=[{id:'repair',object_id:'speakers',target:'field',field:'owner',value:'陈',reason:'补充明确负责人。',citations:[{source_id:'object:speakers',quote:'对象：speakers'}]}];
   const b=await browser(t,{rows:[r]});await b.select('A');await b.click('continue-task');await b.select('A');
-  b.window.document.querySelector('[data-change="repair"]').checked=true;await b.click('apply-changes');
+  const choice=b.window.document.querySelector('[data-change="repair"]');
+  assert.match(choice.closest('label').textContent,/确认分享嘉宾 · 负责人/);
+  choice.checked=true;await b.click('apply-changes');
   assert.equal(b.db.get('A').input.workbench.objects[1].fields.owner,'');assert.equal(b.db.get('A').applied_workbench.objects[1].fields.owner,'陈');
   assert.match(b.$('task-detail').textContent,/已生成新工作台版本/);
 });
