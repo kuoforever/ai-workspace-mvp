@@ -84,11 +84,27 @@ def demo_output(review):
 
 
 class ReviewService:
+    output_field = "report"
+
     def __init__(self, directory, knowledge=None):
         self.store = Store(directory)
         self.knowledge = knowledge or Knowledge()
         self.lock = threading.Lock()
         self.store.interrupt_running()
+
+    def _demo(self, review):
+        return demo_output(review)
+
+    def _parse(self, candidate):
+        return ModelOutput.model_validate(candidate)
+
+    def _validate(self, output, review):
+        validate_output(
+            output, review["input"]["check_ids"], review["sources"], not review["answers"]
+        )
+
+    def _output_error(self, exc):
+        return "结果未通过结构、检查覆盖或引用校验；重新读取上下文后修正。"
 
     def _run(self, review, resume=None):
         started = time.monotonic()
@@ -113,18 +129,14 @@ class ReviewService:
                     if review["input"]["mode"] == "mcp":
                         review["status"] = "waiting_model"
                         break
-                    output = demo_output(review)
-                    validate_output(
-                        output,
-                        review["input"]["check_ids"],
-                        review["sources"],
-                        not review["answers"],
-                    )
+                    output = self._demo(review)
+                    self._validate(output, review)
                     review["accepted_outputs"] += 1
                     review["submission_attempts"] += 1
                     result = graph.invoke(Command(resume=output.model_dump()), config)
                 else:
-                    review.update(status="completed", report=result["output"], completed_at=now())
+                    review.update(status="completed", completed_at=now())
+                    review[self.output_field] = result["output"]
         except Exception:
             review.update(
                 status="failed", error="流程执行失败；输入已保存。请新建评审，查看本地日志排查。"
@@ -214,11 +226,11 @@ class ReviewService:
                 raise Conflict("评审版本或输入摘要不匹配，请重新读取上下文")
             r["submission_attempts"] += 1
             try:
-                output = ModelOutput.model_validate(candidate)
-                validate_output(output, r["input"]["check_ids"], r["sources"], not r["answers"])
-            except ValueError:
+                output = self._parse(candidate)
+                self._validate(output, r)
+            except ValueError as exc:
                 r["revision"] += 1
-                r["error"] = "结果未通过结构、检查覆盖或引用校验；重新读取上下文后修正。"
+                r["error"] = self._output_error(exc)
                 if r["submission_attempts"] >= 3:
                     r["status"] = "failed"
                     r["error"] = "已达到三次结果提交上限；请新建评审。"

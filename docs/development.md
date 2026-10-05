@@ -42,6 +42,7 @@ evidence/    发布版本的测试报告与截图
 uv run --no-sync pytest -q
 uv run --no-sync ruff check app tests scripts evals
 node --check static/ai-review-ui.js
+node --check static/workspace.js
 npm ci --ignore-scripts --no-audit --no-fund
 npm test
 uv run --no-sync python -m evals.benchmark freeze
@@ -50,6 +51,8 @@ uv run --no-sync python -m evals.benchmark freeze
 后端测试覆盖幂等、版本冲突、来源校验、状态恢复、提交限制和本机访问控制。MCP 协议测试会启动隔离的 Web 服务和 stdio 客户端，不使用日常数据库。
 
 Web 回归使用真实的 AI 页面脚本和隔离 DOM，控制请求完成顺序及响应丢失，覆盖导航、版本单调接收、草稿恢复和原提交重试。浏览器依赖仅用于开发验证，不进入产品运行路径。Web 的输入与待确认请求保存在当前标签页的 sessionStorage；刷新可以恢复，关闭标签页不作为持久化保证。
+
+通用页面的回归另覆盖完整工作台与要求输入、条目编辑、迟到导入、原请求重试、离线引用与新版本。通用输入、回答、原请求和最近打开的一份任务使用 localStorage。`test_workbench.py` 覆盖非工程场景、业务缺失与接入错误的区别、六类产物、要求冲突、来源分页、修改范围与版本恢复；真实 stdio 测试同时覆盖原工程和通用任务。
 
 CI 分别运行后端检查、Android 构建与模拟器测试、iOS 构建与模拟器测试。已发布版本的统计和运行链接见[测试报告](../evidence/README.md)。客户端协议测试使用固定数据，模型评测单独见 [evals](../evals/README.md)。
 

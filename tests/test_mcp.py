@@ -10,6 +10,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 from app.knowledge import ROOT
+from app.workbench_tasks import demo_task_output
 
 
 def test_real_stdio_protocol_with_web_state(tmp_path):
@@ -64,6 +65,13 @@ def test_real_stdio_protocol_with_web_state(tmp_path):
                         "start_review",
                         "get_check_catalog",
                         "submit_review_output",
+                        "get_workbench_contract",
+                        "import_workbench_input",
+                        "start_workbench_task",
+                        "list_pending_tasks",
+                        "get_task_context",
+                        "read_task_source",
+                        "submit_task_output",
                     }
                     created = await session.call_tool(
                         "start_review",
@@ -105,6 +113,45 @@ def test_real_stdio_protocol_with_web_state(tmp_path):
                     )
                     assert not result.isError
                     assert result.structuredContent["status"] == "completed"
+                    workbench = client.get(base + "/api/workbenches/example").json()
+                    started = await session.call_tool(
+                        "start_workbench_task",
+                        {
+                            "request_key": "generic-create",
+                            "input": {
+                                "title": "通用工作台协议测试",
+                                "workbench": workbench,
+                                "task_type": "review",
+                                "goal": "识别筹备计划的缺失信息与要求冲突。",
+                                "deliverable": "逐条覆盖所有要求，并生成带引用的核对报告。",
+                            },
+                        },
+                    )
+                    assert not started.isError
+                    tid = started.structuredContent["id"]
+                    task_context = (
+                        await session.call_tool("get_task_context", {"task_id": tid})
+                    ).structuredContent
+                    assert "task:delivery" in task_context["requirements"]
+                    assert task_context["checks"]["workbench:budget-plan"]["verdict"] == "conflict"
+                    original = await session.call_tool(
+                        "read_task_source", {"task_id": tid, "source_id": "object:speakers"}
+                    )
+                    assert not original.isError and "嘉宾" in original.structuredContent["text"]
+                    task = client.get(base + f"/api/tasks/{tid}").json()
+                    submitted = await session.call_tool(
+                        "submit_task_output",
+                        {
+                            "task_id": tid,
+                            "revision": task_context["revision"],
+                            "input_sha256": task_context["input_sha256"],
+                            "request_key": "generic-result",
+                            "output": demo_task_output(task).model_dump(),
+                        },
+                    )
+                    assert not submitted.isError
+                    assert submitted.structuredContent["status"] == "completed"
+                    assert client.get(base + f"/api/tasks/{tid}").json()["result"]["artifacts"]
                     return r["id"]
 
             rid = asyncio.run(scenario())

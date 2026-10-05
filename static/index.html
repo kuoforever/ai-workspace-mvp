@@ -168,7 +168,7 @@ dialog{color:var(--ink);width:92vw;max-width:1000px;max-height:88vh;border:1px s
   <div class="workspace">
     <header class="topbar">
       <div class="page-location"><div class="breadcrumb"><button id="nav-back" hidden aria-label="返回上一个页面">‹ 返回</button><strong id="view-title">工作概览</strong></div><div id="save-state" role="status" aria-live="polite"></div></div>
-      <div class="top-actions"><button data-ai-addon id="ai-review-launch" class="primary">✧ AI 设计评审</button>
+      <div class="top-actions"><button data-ai-addon id="workbench-launch">通用任务 ↗</button><button data-ai-addon id="ai-review-launch" class="primary">✧ AI 设计评审</button>
         <button id="global-search" class="search-trigger" title="搜索检查项、手册与方案（Ctrl+K）"><span data-icon="search" aria-hidden="true"></span><span>搜索工作台</span><kbd>Ctrl K</kbd></button>
         <div class="history-actions"><button id="undo" class="icon-button" aria-label="撤销记录修改" title="撤销记录修改（Ctrl+Z）"><span data-icon="undo" aria-hidden="true"></span></button><button id="redo" class="icon-button" aria-label="重做记录修改" title="重做记录修改（Ctrl+Shift+Z）"><span data-icon="redo" aria-hidden="true"></span></button></div>
         <button id="export-html" class="primary" title="下载包含全文、附件和当前记录的新 HTML。请确认下载完成，下次打开新文件继续。"><span data-icon="save" aria-hidden="true"></span>另存为新文件</button>
@@ -888,7 +888,7 @@ window.addEventListener('beforeunload',e=>{recent.set(record.id,clone(record));i
 document.querySelectorAll('[data-icon]').forEach(el=>el.innerHTML=icon(el.dataset.icon));
 savedKeys.set(record.id,contentKey(record));recent.set(record.id,clone(record));nav.init();render();
 window.SWEAI={openDoc};
-window.Handbook={validateRecord,summary,resultErrors,report,getRecord:()=>clone(record),getBundle:()=>({checks:bundle.checks.length,decisions:bundle.decisions.length,docs:bundle.docs.length}),exportHTML,isDirty:()=>dirty(record)};
+window.Handbook={validateRecord,summary,resultErrors,report,getRecord:()=>clone(record),getSnapshot:()=>{flushText();return clone(record);},getBundle:()=>({checks:bundle.checks.length,decisions:bundle.decisions.length,docs:bundle.docs.length}),exportHTML,isDirty:()=>dirty(record)};
 })();
 </script>
 <script data-ai-addon src="/assets/ai-review-ui.js"></script></body></html>

@@ -131,6 +131,10 @@ import UniformTypeIdentifiers
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
                 status
+                Link(destination: URL(string: "http://localhost:8765/workspace")!) {
+                    Label("通用工作台 · 在浏览器中打开", systemImage: "square.grid.2x2")
+                        .frame(maxWidth: .infinity).padding(.vertical, 7)
+                }.buttonStyle(.bordered).disabled(model.busy).accessibilityIdentifier("general-workbench")
                 Text("把设计，变成有依据的判断。").font(.title2.bold())
                 Text(model.savedOnly ? "设备中的评审快照" : (model.cached ? "显示本机缓存 · 联网后刷新" : "与电脑工作台共享评审记录"))
                     .font(.footnote).foregroundStyle(.secondary)

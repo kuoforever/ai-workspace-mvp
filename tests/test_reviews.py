@@ -212,7 +212,7 @@ def test_origin_host_body_limits_and_private_files(client):
 
 
 def test_original_workbench_still_available_and_manual_results_are_separate(client):
-    html = client.get("/").text
+    html = client.get("/engineering").text
     assert 'id="bundle-data"' in html and "window.Handbook=" in html
     assert 'id="ai-review-launch"' in html
     assert "querySelectorAll('[data-ai-addon]')" in html
